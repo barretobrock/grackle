@@ -1,0 +1,20 @@
+# Put this in /lib/systemd/system
+# Then
+# sudo chmod 644 <filename>
+# sudo systemctl daemon-reload
+# sudo systemctl enable <filename>
+
+[Unit]
+Description=Personal Finance Webapp
+After=multi-user.target
+
+[Service]
+User=bobrock
+Group=bobrock
+Type=idle
+ExecStart=/home/bobrock/venvs/grackle/bin/python3 /home/bobrock/extras/grackle/run.py -lvl debug
+WorkingDirectory=/home/bobrock/extras/grackle
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target

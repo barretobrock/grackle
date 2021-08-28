@@ -1,0 +1,7 @@
+Flask
+Flask-SQLAlchemy
+requests
+numpy
+pandas
+pykeepass
+sqlalchemy
