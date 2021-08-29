@@ -1,14 +1,9 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-import os
-os.environ['GRACKLE_ENV'] = "PRODUCTION"
-from grackle.app import app
-
-
-@app.route('/')
-def index():
-    return 'CAH'
+from routes.main import create_app
+from grackle.settings import ProductionConfig
 
 
 if __name__ == '__main__':
-    app.run(port=5006)
+    app = create_app(config_class=ProductionConfig)
+    app.run(host='127.0.0.1', port=ProductionConfig.PORT, debug=ProductionConfig.DEBUG)

@@ -29,9 +29,7 @@
         <div class="collapse navbar-collapse" id="navbarNav">
             <ul class="navbar-nav mr-auto">
                 {% set nav_dict = [
-                    ('posts.blog', 'Blog'),
-                    ('main.projects', 'Projects'),
-                    ('main.contact', 'Contact')
+                    ('chart.chart1', 'Chart1')
                 ] -%}
 
                 {% for id, caption in nav_dict %}
@@ -50,10 +48,9 @@
             {% endfor %}
           {% endif %}
         {% endwith %}
-        {% block content %} {% endblock %}
-    </div>
-    <div id="content">
 
+        <!-- Here's where the main content gets piped in! -->
+        {% block content %} {% endblock %}
     </div>
   </body>
 </html>

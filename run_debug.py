@@ -1,14 +1,9 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-import os
 from routes.main import create_app
-from grackle.settings import DevelopmentC
-
-
-@app.route('/')
-def index():
-    return 'CAH'
+from grackle.settings import DevelopmentConfig
 
 
 if __name__ == '__main__':
-    app = create_app(config_class=)
+    app = create_app(config_class=DevelopmentConfig)
+    app.run(host='127.0.0.1', port=DevelopmentConfig.PORT, debug=DevelopmentConfig.DEBUG)

@@ -1,7 +1,10 @@
+easylogger
 Flask
 Flask-SQLAlchemy
 requests
 numpy
 pandas
+piecash
+plotly
 pykeepass
 sqlalchemy
