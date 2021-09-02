@@ -1,12 +1,12 @@
-from flask import Flask, render_template, Blueprint, request, flash
+from flask import Flask, render_template, Blueprint, request, flash, make_response, redirect, url_for
 from flask_sqlalchemy import SQLAlchemy
 from easylogger import Log
 from grackle.settings import BaseConfig
 from .chart import cht
+from .finances import fin
 
 
 logg = Log('grackle-app', log_to_file=True, log_level_str='DEBUG')
-db = SQLAlchemy()
 main = Blueprint('main', __name__)
 
 
@@ -20,7 +20,7 @@ def create_app(*args, **kwargs) -> Flask:
     # Initialize things that supports app
     db.init_app(app)
     # Register routes
-    for rt in [main, cht]:
+    for rt in [main, cht, fin]:
         app.register_blueprint(rt)
 
     return app
@@ -42,5 +42,6 @@ def upload_file():
     if request.method == 'POST':
         f = request.files.get('file')
         f.save(BaseConfig.GNUCASH_PATH)
-        flash('Uploaded file successfully saved.')
-
+        flash('Uploaded file successfully saved.', 'success')
+        return redirect(url_for('main.index'))
+    return render_template('index.html')

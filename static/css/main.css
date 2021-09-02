@@ -1,0 +1,9 @@
+
+.nav-logo {
+    width: 25px;
+}
+
+.alert.success {
+    background-color: #00af71;
+    border-radius: 15px;
+}
