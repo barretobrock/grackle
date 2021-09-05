@@ -4,7 +4,6 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from easylogger import Log
 from grackle._version import get_versions
-from grackle.core import GNUCashProcessor
 from grackle.model import Base
 
 
@@ -31,7 +30,6 @@ class BaseConfig(object):
     engine = create_engine(SQLALCHEMY_DATABASE_URI, isolation_level='SERIALIZABLE')
     Base.metadata.bind = engine
     SESSION = sessionmaker(bind=engine)
-    GNC = GNUCashProcessor(csv_path=CSVDATA_PATH, book_path=GNUCASH_PATH)
     SECRET_KEY_PATH = os.path.join(KEY_DIR, 'grackle-secret')
     if not os.path.exists(SECRET_KEY_PATH):
         raise FileNotFoundError(f'grackle-secret at {SECRET_KEY_PATH} not found...')

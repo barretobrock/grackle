@@ -1,5 +1,11 @@
 import enum
-from sqlalchemy import Column, Integer, ForeignKey, Text, VARCHAR, Float, Enum, Boolean
+from sqlalchemy import (
+    Column,
+    Integer,
+    VARCHAR,
+    Enum,
+    Boolean
+)
 from sqlalchemy.orm import relationship
 from sqlalchemy.ext.hybrid import hybrid_property
 from .base import Base
@@ -7,23 +13,31 @@ from .base import Base
 
 class AccountClass(enum.Enum):
     """A more traditional way of classifying accounts"""
-    ASSET = 'ASSET'
-    LIABILITY = 'LIABILITY'
-    EQUITY = 'EQUITY'
-    INCOME = 'INCOME'
-    EXPENSE = 'EXPENSE'
+    ASSET = 1
+    LIABILITY = 2
+    EQUITY = 3
+    INCOME = 4
+    EXPENSE = 5
+    CASH = 6
+    BANK = 7
+    RECEIVABLE = 8
+    STOCK = 9
+    CREDIT = 10
 
 
 class AccountCategory(enum.Enum):
     """A slightly more nuanced way of organizing accounts in a way that better aligns with my reports"""
-    LOAN = 'LOAN'
-    CREDIT_CARD = 'CREDIT_CARD'
+    CHECKING = 1
+    SAVINGS = 2
+    CREDIT_CARD = 3
+    LOAN = 4
+    OTHER = 5
 
 
 class Currencies(enum.Enum):
-    EUR = 'EUR'
-    GBP = 'GBP'
-    USD = 'USD'
+    EUR = 1
+    GBP = 2
+    USD = 3
 
 
 class TableAccounts(Base):
@@ -36,11 +50,12 @@ class TableAccounts(Base):
     account_currency = Column(Enum(Currencies), default=Currencies.USD, nullable=False)
     is_hidden = Column(Boolean, default=False, nullable=False)
     transactions = relationship('TableTransactions', back_populates='account')
+    budgets = relationship('TableBudget', back_populates='account')
     fullname = Column(VARCHAR, nullable=False)
 
     @hybrid_property
     def friendly_name(self) -> str:
-        name_splits = self.fullname.split('.')
+        name_splits = self.fullname.split(':')
         if self.account_class in (AccountClass.EXPENSE, AccountClass.INCOME):
             return '-'.join(name_splits[1:])
         # ALE all have two leading groups that aren't necessarily important

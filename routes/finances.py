@@ -6,6 +6,8 @@ fin = Blueprint('finances', __name__)
 
 @fin.route('/refresh')
 def refresh_book():
+    # TODO Optionally tie this in with the upload endpoint and have separate endpoints to
+    #  refresh specific parts if not all are needed (transactions, invoices, etc)
     current_app.config['GNC'].refresh_book()
     flash('Financial data refresh successful.', 'success')
     return redirect(url_for('main.index'))
