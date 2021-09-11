@@ -1,0 +1,47 @@
+{% extends 'base.html' %}
+
+{% block content %}
+    <div id="invoice-info">
+        <span id="invoice-title">Invoice {{ invoice.invoice_no }}</span>
+        <div>
+            <span>created {{ invoice.created_date.strftime('%Y-%m-%d') }}</span>
+            <span class="fa fa-{{ 'check' if invoice.is_paid else 'times' }}">{{ 'PAID' if invoice.is_paid else 'UNPAID' }}</span>
+        </div>
+    </div>
+    <div id="invoice-entry-list">
+        <table class="table table-bordered entries-table">
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Item</th>
+                    <th>Quantity</th>
+                    <th>Price</th>
+                    <th>Discount</th>
+                    <th>Total</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for entry in invoice.entries %}
+                <tr>
+                    <td>{{ entry.transaction_date.strftime('%Y-%m-%d') }}</td>
+                    <td>{{ entry.description }}</td>
+                    <td>{{ '{:.2f}'.format(entry.quantity) }}</td>
+                    <td>{{ '{:.2f}'.format(entry.unit_price) }}</td>
+                    <td>{{ '{:.2f}'.format(entry.discount) }}</td>
+                    <td>{{ '{:.2f}'.format(entry.total) }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+            <tfoot>
+                <tr>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td>Total: </td>
+                    <td>{{ '{:.2f}'.format(invoice.total) }}</td>
+                </tr>
+            </tfoot>
+        </table>
+    </div>
+{% endblock %}

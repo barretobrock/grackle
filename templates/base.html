@@ -12,7 +12,7 @@
     <!-- JS -->
     <!-- Flash message timeout -->
     <script type="text/javascript">
-        window.setTimeout("for (const elem of document.getElementsByClassName('success')) {elem.style.display = 'none';}", 2000);
+        window.setTimeout("for (const elem of document.getElementsByClassName('alert')) {elem.style.display = 'none';}", 2000);
     </script>
     <!-- FontAwesome -->
     <script src="https://use.fontawesome.com/9b3bd4052a.js"></script>
@@ -48,7 +48,7 @@
 {#                {% if request.endpoint in ['posts.blog', 'posts.post'] %}#}
 {#                    <a class="nav-item nav-link" href="{{ url_for('posts.new_post') }}">New Post</a>#}
 {#                {% endif %}#}
-                <a class="nav-item nav-link" href="{{ url_for('fin.get_invoices') }}">Invoices</a>
+                <a class="nav-item nav-link" href="{{ url_for('finances.get_invoices') }}">Invoices</a>
             </div>
         </div>
     </nav>

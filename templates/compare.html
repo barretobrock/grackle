@@ -1,0 +1,47 @@
+{% extends 'base.html' %}
+
+{% block content %}
+    <h2>Personal Finance</h2>
+    <div id="mvm-table" >
+        {% for name, df in [['expense', expense_df], ['income', income_df]] %}
+        <div>{{ name.title() }}</div>
+        <table class="table table-bordered {{ name }}-table">
+            <thead>
+                <tr>
+                    {% for col in df.columns.tolist() %}
+                        {% if col != 'class' %}
+                            <th class="{{ "val-header" if not loop.first else "" }}">{{ col.title() }}</th>
+                        {% endif %}
+                    {% endfor %}
+                </tr>
+            </thead>
+            <tbody>
+            {% for i, row in df.iterrows() %}
+                <tr class={{ "total" if row['account'] == 'Total' else '' }}>
+                    {% for k, v in row.items() %}
+                        {% set class_names = [] %}
+                        {% if v is number %}
+                            {% if k == 'change' %}
+                                {{ class_names.append( 'diff' ) if class_names.append( 'diff' ) }}
+                            {% else %}
+                                {{ class_names.append( 'val' ) if class_names.append( 'val' ) }}
+                            {% endif %}
+                            {% if -0.001 < v < 0.001 %}
+                                {{ class_names.append( 'zero' ) if class_names.append( 'zero' ) }}
+                            {% elif v > 0 %}
+                                {{ class_names.append( 'pos' ) if class_names.append( 'pos' ) }}
+                            {% elif v < 0 %}
+                                {{ class_names.append( 'neg' ) if class_names.append( 'neg' ) }}
+                            {% endif %}
+                            <td class="{{ ' '.join(class_names) }}">{{ "{:,.2f}".format(v) }}</td>
+                        {% else %}
+                            <td>{{ v }}</td>
+                        {% endif %}
+                    {% endfor %}
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+        {% endfor %}
+    </div>
+{% endblock %}

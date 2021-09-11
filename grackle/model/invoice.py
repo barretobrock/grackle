@@ -25,6 +25,10 @@ class TableInvoices(Base):
     is_paid = Column(Boolean, default=False, nullable=False)
     paid_date = Column(TIMESTAMP)
 
+    @hybrid_property
+    def total(self) -> float:
+        return sum([x.total for x in self.entries])
+
 
 class TableInvoiceEntries(Base):
     """Entries in invoices"""

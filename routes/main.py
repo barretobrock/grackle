@@ -1,29 +1,17 @@
-from flask import Flask, render_template, Blueprint, request, flash, make_response, redirect, url_for
-from flask_sqlalchemy import SQLAlchemy
+from flask import (
+    Flask,
+    render_template,
+    Blueprint,
+    request,
+    flash,
+    redirect,
+    url_for
+)
 from easylogger import Log
-from grackle.settings import BaseConfig
-from .chart import cht
-from .finances import fin
-
+from grackle.settings import auto_config
 
 logg = Log('grackle-app', log_to_file=True, log_level_str='DEBUG')
 main = Blueprint('main', __name__)
-
-
-def create_app(*args, **kwargs) -> Flask:
-    """Creates a Flask app instance"""
-    # Config app
-    config_class = kwargs.pop('config_class', BaseConfig)
-    app = Flask(__name__, static_folder=config_class.STATIC_DIR_PATH,
-                template_folder=config_class.TEMPLATE_DIR_PATH)
-    app.config.from_object(config_class)
-    # Initialize things that supports app
-    db.init_app(app)
-    # Register routes
-    for rt in [main, cht, fin]:
-        app.register_blueprint(rt)
-
-    return app
 
 
 @main.route('/')
@@ -41,7 +29,7 @@ def upload_page():
 def upload_file():
     if request.method == 'POST':
         f = request.files.get('file')
-        f.save(BaseConfig.GNUCASH_PATH)
+        f.save(auto_config.GNUCASH_PATH)
         flash('Uploaded file successfully saved.', 'success')
         return redirect(url_for('main.index'))
     return render_template('index.html')
