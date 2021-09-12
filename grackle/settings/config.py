@@ -18,9 +18,9 @@ class BaseConfig(object):
     TEMPLATE_DIR_PATH = '../templates'
     # backend
     DATA_DIR = os.path.join(os.path.expanduser('~'), 'data')
+    BACKUP_DIR = os.path.join(DATA_DIR, 'gnucash_backups')
     KEY_DIR = os.path.join(os.path.expanduser('~'), 'keys')
     GNUCASH_PATH = os.path.join(DATA_DIR, 'gnucash_sqlite.gnucash')
-    CSVDATA_PATH = os.path.join(DATA_DIR, 'pfinweb_data.csv')
 
     DB_PATH = os.path.join(DATA_DIR, 'personalfin.db')
     if not os.path.exists(DB_PATH):
@@ -40,7 +40,6 @@ class BaseConfig(object):
 class DevelopmentConfig(BaseConfig):
     """Configuration for development environment"""
     DEBUG = True
-    DB_PATH = os.path.join(BaseConfig.DATA_DIR, 'personalfin-qa.db')
     LOG = Log('grackle', log_level_str='DEBUG')
 
 

@@ -9,11 +9,11 @@ Description=Personal Finance Webapp
 After=multi-user.target
 
 [Service]
-User=bobrock
-Group=bobrock
+User=pi
+Group=pi
 Type=idle
-ExecStart=/home/bobrock/venvs/grackle/bin/python3 /home/bobrock/extras/grackle/run.py -lvl debug
-WorkingDirectory=/home/bobrock/extras/grackle
+ExecStart=/home/pi/venvs/grackle/bin/python3 /home/pi/extras/grackle/run.py -lvl debug
+WorkingDirectory=/home/pi/extras/grackle
 Restart=on-failure
 
 [Install]
