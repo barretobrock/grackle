@@ -4,8 +4,19 @@
     <div id="invoice-info">
         <span id="invoice-title">Invoice {{ invoice.invoice_no }}</span>
         <div>
-            <span>created {{ invoice.created_date.strftime('%Y-%m-%d') }}</span>
-            <span class="fa fa-{{ 'check' if invoice.is_paid else 'times' }}">{{ 'PAID' if invoice.is_paid else 'UNPAID' }}</span>
+            <div>
+                <span class="badge badge-primary">created</span>
+                <span class="badge badge-secondary">{{ invoice.created_date.strftime('%Y-%m-%d') }}</span>
+            </div>
+            <div>
+                <span class="badge badge-{{ 'success' if invoice.is_paid else 'danger' }}">
+                    <span class="fa fa-{{ 'check' if invoice.is_paid else 'times' }}">{{ ' paid' if invoice.is_paid else ' unpaid' }}</span>
+                </span>
+                {% if invoice.is_paid %}
+                    <span class="badge badge-secondary">{{ invoice.paid_date.strftime('%Y-%m-%d') }}</span>
+                {% endif %}
+            </div>
+
         </div>
     </div>
     <div id="invoice-entry-list">

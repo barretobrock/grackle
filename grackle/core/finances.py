@@ -1,28 +1,57 @@
 import os
+import re
+import functools
 from shutil import copyfile
 from datetime import datetime
-from typing import List, Dict, Union
+from typing import List, Dict, Union, Optional
+import sqlalchemy
+from sqlalchemy.orm import Session
+from easylogger import Log
 import piecash
+from piecash.core.book import Book, Account, Split
 from piecash.business.invoice import Entry, Invoice
 import pandas as pd
+from grackle.model import (
+    Base,
+    TableAccounts,
+    TableBudget,
+    TableInvoices,
+    TableInvoiceEntries,
+    TableTransactions,
+    Currencies,
+    ReconciledStates,
+    AccountClass,
+    AccountCategory
+)
+import grackle.settings as gsettings
 
 
 class GNUCashProcessor:
 
-    def __init__(self, csv_path: str, book_path: str):
-        self.book = None
-        self.transactions_df = None
-        self.csv_path = csv_path
-        self.default_book_path = book_path
-        self._read_transactions_df()
-        # TODO: download book(structure only?),
-        #  upload new book, parse out transactions and move them in to default book
+    class _Decorators(object):
+        @classmethod
+        def check_book(cls, func):
+            """Checks if book is read in and sets up the session"""
+            @functools.wraps(func)
+            def wrap(self, *args, **kwargs):
+                if self.book is None:
+                    self.refresh_book()
+                return func(self, *args, **kwargs)
+            return wrap
+
+    def __init__(self, parent_log: Log = None):
+        self.log = Log(parent_log, child_name=self.__class__.__name__, log_level_str='DEBUG')
+        self.book = None                # type: Optional[Book]
+        self.session = None             # type: Optional[Session]
+        self.book_last_updated = datetime.fromtimestamp(
+            os.path.getmtime(gsettings.auto_config.GNUCASH_PATH))   # type: Optional[datetime]
 
     def refresh_book(self):
-        self.book = piecash.open_book(self.default_book_path, readonly=True,
-                                      open_if_lock=True)  # type: piecash.core.book.Book
-        self.transactions_df = self.get_all_transactions()
-        self._save_transactions_df()
+        self.book = piecash.open_book(gsettings.auto_config.GNUCASH_PATH, readonly=True,
+                                      open_if_lock=True)
+        self.session = gsettings.auto_config.SESSION()
+        self.book_last_updated = datetime.fromtimestamp(
+            os.path.getmtime(gsettings.auto_config.GNUCASH_PATH))
 
     def load_new_book(self, fpath: str):
         if os.path.exists(fpath):
@@ -32,95 +61,112 @@ class GNUCashProcessor:
             except Exception as e:
                 # Failed to open... don't overwrite this book with the default
                 return False
+            # Copy existing file to backups, append timestamp to end of file name
+            newfile = f'gnucash_web_{datetime.now():%F_%T}.gnucash'
+            copyfile(gsettings.auto_config.GNUCASH_PATH, os.path.join(gsettings.auto_config.BACKUP_DIR, newfile))
             # Copy the file to the default path
-            copyfile(fpath, self.default_book_path)
+            copyfile(fpath, gsettings.auto_config.GNUCASH_PATH)
             self.refresh_book()
             return True
         else:
             raise FileNotFoundError(f'File at path {fpath} doesn\'t seem to exist.')
 
-    def _save_transactions_df(self):
-        """Saves the processed transactions df to csv"""
-        self.transactions_df.to_csv(self.csv_path, sep=';', index=False)
-
-    def _read_transactions_df(self):
-        """Reads in a previously saved transactions df"""
-        if os.path.exists(self.csv_path):
-            self.transactions_df = pd.read_csv(self.csv_path, sep=';')
-        else:
-            # Refresh the data by reading in the book and saving
-            self.refresh_book()
-
-    @staticmethod
-    def filter_dates(df: pd.DataFrame, start: datetime, end: datetime = None) -> pd.DataFrame:
-        if end is not None:
-            # Start and end date
-            date_mask = (df['date'] >= start) & (df['date'] <= end)
-        else:
-            date_mask = (df['date'] >= start)
-        return df.loc[date_mask]
-
-    def get_all_invoices(self):
-        """Collects invoice data and puts it into a dataframe"""
-        invoices = self.book.invoices  # type: List[Invoice]
-        df = pd.DataFrame()
-        for inv in invoices:
-            inv_no = inv.id
-            entries = inv.entries   # type: List[Entry]
-            for entry in entries:
-                df.append({
-                    'invoice': inv_no,
-                    'date': entry.date,
-                    'desc': entry.description,
-                    'quantity': entry.quantity,
-                    'unit price': entry.i_price,
-                    'discount': entry.i_discount,
-                    'total': entry.quantity * entry.i_price * (1 - entry.i_discount)
-                }, ignore_index=True)
-
-    def get_all_transactions(self, start: datetime = None, end: datetime = None) -> \
-            pd.DataFrame:
-        df = pd.DataFrame()
-        for acc in self.book.accounts:
-            if acc.commodity.mnemonic == 'template':
-                # Bypass stored scheduled transactions
-                continue
-            acc_df = pd.DataFrame({
-                'name': acc.name,
-                'type': acc.type,
-                'cur': acc.commodity.mnemonic,
-                'fullname': acc.fullname,
-                'is_hidden': acc.hidden
-            }, index=[0])
-            if len(acc.splits) > 0:
-                # Add transations
-                trans_df = pd.DataFrame()
-                for splt in acc.splits:
-                    trans_df = trans_df.append({
-                        'fullname': acc.fullname,
-                        'date': splt.transaction.post_date,
-                        'desc': splt.transaction.description,
-                        'memo': splt.memo,
-                        'reconcile_state': splt.reconcile_state,
-                        'amt': splt.value
-                    }, ignore_index=True)
-                merged = acc_df.merge(trans_df, on='fullname', how='left')
-                df = df.append(merged)
-
-        df['fullname'] = df.fullname.str.replace(':', '.')
-        df['date'] = pd.to_datetime(df['date'])
-
-        # Assign my categories to the dataframe
-        categories = {
-            'CHECKING': r'(.*Current Assets.*CHK)',
-            'SAVINGS': r'(.*Current Assets.*(MM|SAV).*)',
-            'CREDITCARD': r'(.*Liabilities.Credit Cards.*)'
+    @_Decorators.check_book
+    def etl_accounts_transactions_budget(self):
+        """Routine to collect and store account details, transactions and budget info"""
+        acc_mapping = {
+            AccountCategory.CHECKING: r'(.*Current Assets.*CHK)',
+            AccountCategory.SAVINGS: r'(.*Current Assets.*(MM|SAV).*)',
+            AccountCategory.CREDIT_CARD: r'(.*Liabilities.Credit Cards.*)',
+            AccountCategory.LOAN: r'(.*Liabilities.Loans.*)'
         }
-        df['category'] = 'OTHER'
-        for k, v in categories.items():
-            df.loc[df['fullname'].str.match(v), 'category'] = k
+        acc: Account
+        for acc in self.book.accounts:
+            self.log.debug(f'Working on: {acc.fullname}')
+            if acc.commodity.mnemonic == 'template' or acc.type == 'STOCK':
+                # Bypass stored scheduled transactions and stocks for now
+                continue
+            acc_class = AccountClass[acc.type.upper()]
+            acc_cat = AccountCategory.OTHER
+            acc_cur = Currencies[acc.commodity.mnemonic]
+            for k, v in acc_mapping.items():
+                if re.match(v, acc.fullname) is not None:
+                    acc_cat = k
+                    break
 
-        df = df.reset_index(drop=True)
-        if start is not None:
-            return self.filter_dates(df, start, end)
-        return df
+            # Determine friendly name
+            fullname = acc.fullname.replace(':', '.')
+            name_splits = fullname.split('.')
+            if len(name_splits) == 1:
+                friendly_name = fullname
+            elif acc_class in (AccountClass.EXPENSE, AccountClass.INCOME):
+                friendly_name = '-'.join(name_splits[1:])
+            elif len(name_splits) > 2:
+                # ALE all have two leading groups that aren't necessarily important
+                #   in differentiating the names in, say, a graph
+                friendly_name = '-'.join(name_splits[2:])
+            else:
+                friendly_name = '-'.join(name_splits)
+            acc_obj = TableAccounts(account_class=acc_class, account_category=acc_cat,
+                                    account_currency=acc_cur, is_hidden=acc.hidden,
+                                    fullname=fullname, friendly_name=friendly_name)
+            if len(acc.budget_amounts) > 0:
+                for bdg in acc.budget_amounts:
+                    bdg_year = bdg.budget.recurrence.recurrence_period_start.year
+                    bdg_month = bdg.period_num + 1
+                    # Record budget
+                    budget = TableBudget(name=bdg.budget.name, amount=bdg.amount, year=bdg_year, month=bdg_month)
+                    acc_obj.budgets.append(budget)
+
+            split: Split
+            for split in acc.splits:
+                invoice_no = ''
+                if split.lot is not None:
+                    for lot in split.lot.slots:
+                        if lot.name == 'gncInvoice':
+                            # Transaction for invoice - get invoice number(s)
+                            invoice = lot.value.get('invoice-guid', None)
+                            if invoice is not None:
+                                invoice_no = invoice.id
+                value = split.value
+                if acc_class == AccountClass.INCOME and split.is_credit and value < 0:
+                    # Invert negative income, as it's a negative credit
+                    value *= -1
+                t = TableTransactions(guid=split.transaction_guid, transaction_date=split.transaction.post_date,
+                                      reconciled_state=ReconciledStates[split.reconcile_state],
+                                      desc=split.transaction.description, memo=split.memo, invoice_id=invoice_no,
+                                      amount=value, currency=acc_cur)
+                acc_obj.transactions.append(t)
+            self.session.add(acc_obj)
+        self.session.commit()
+
+    @_Decorators.check_book
+    def etl_invoices(self):
+        """Routine to collect and store all invoices"""
+        # This is where we'll store rows that are ready to add to the database
+        invoices = self.book.invoices
+        invoice: Invoice
+        for invoice in invoices:
+            if invoice.id == '000001':
+                # Unclosed test invoice?
+                continue
+            related_transactions = self.session.query(TableTransactions).filter(
+                TableTransactions.invoice_id == invoice.id).all()
+            if len(related_transactions) > 0:
+                is_paid = any(x.amount < 0 for x in related_transactions)
+                pmt_date = related_transactions[0].transaction_date
+            else:
+                is_paid = False
+                pmt_date = None
+            invoice_obj = TableInvoices(invoice_no=invoice.id, created_date=invoice.date_opened,
+                                        is_posted=invoice.date_posted is not None, posted_date=invoice.date_posted,
+                                        is_paid=is_paid, paid_date=pmt_date, notes=invoice.notes)
+            i_entries = invoice.entries
+            entry: Entry
+            for entry in i_entries:
+                entry_obj = TableInvoiceEntries(invoice_id=invoice_obj.id, transaction_date=entry.date,
+                                                description=entry.description, quantity=entry.quantity,
+                                                unit_price=entry.i_price, discount=entry.i_discount)
+                invoice_obj.entries.append(entry_obj)
+            self.session.add(invoice_obj)
+            self.session.commit()

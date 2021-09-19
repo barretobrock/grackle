@@ -1,0 +1,13 @@
+{% extends 'base.html' %}
+
+{% block content %}
+    <h2>Here's a Chart!</h2>
+    {% for grp in ['Checking', 'Savings'] %}
+        <div id="{{ grp }}-chart" class="chart"></div>
+        <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+        <script type="text/javascript">
+            var graphs = {{graph_dict[grp.upper()] | safe}};
+            Plotly.plot("{{ grp }}-chart", graphs, {});
+        </script>
+    {% endfor %}
+{% endblock %}

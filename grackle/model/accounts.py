@@ -52,12 +52,4 @@ class TableAccounts(Base):
     transactions = relationship('TableTransactions', back_populates='account')
     budgets = relationship('TableBudget', back_populates='account')
     fullname = Column(VARCHAR, nullable=False)
-
-    @hybrid_property
-    def friendly_name(self) -> str:
-        name_splits = self.fullname.split(':')
-        if self.account_class in (AccountClass.EXPENSE, AccountClass.INCOME):
-            return '-'.join(name_splits[1:])
-        # ALE all have two leading groups that aren't necessarily important
-        #   in differentiating the names in, say, a graph
-        return '-'.join(name_splits[2:])
+    friendly_name = Column(VARCHAR, nullable=False)

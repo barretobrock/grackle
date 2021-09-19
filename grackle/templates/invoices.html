@@ -1,12 +1,12 @@
 {% extends 'base.html' %}
 
 {% block content %}
-    <h2>Personal Finance</h2>
+    <h2>Most Recent Invoices</h2>
     <div id="invoice-list">
         <table class="table table-bordered invoices-table">
             <thead>
                 <tr>
-                    <th class="paid-col">Paid</th>
+                    <th class="paid-col">Paid?</th>
                     <th>Invoice</th>
                     <th>Created</th>
                     <th>Status</th>
@@ -17,19 +17,20 @@
         {% for invoice in invoices %}
             <tr class="{{ 'paid' if invoice.is_paid else 'unpaid' }}">
                 <td class="fa {{ 'fa-check' if invoice.is_paid else 'fa-times' }}"></td>
-                <td><a href="/invoice/{{ invoice.invoice_no }}">{{ invoice.invoice_no }}</a></td>
+                <td><a class="badge badge-primary" href="/invoice/{{ invoice.invoice_no }}">{{ invoice.invoice_no }}</a></td>
                 <td>{{ invoice.created_date.strftime('%Y-%m-%d') }}</td>
                 <td>
                     {% if invoice.is_paid %}
-                        {{ 'completed' }}
+                        <span class="badge badge-success">{{ 'Paid' }}</span>
                     {% elif invoice.is_posted %}
-                        {{ 'ready' }}
+                        <span class="badge badge-danger">{{ 'Ready' }}</span>
                     {% else %}
-                        {{ 'in progress' }}
+                        <span class="badge badge-warning">{{ 'WIP' }}</span>
                     {% endif %}
                 </td>
                 <td class="invoice-total">{{ '{:,.2f}'.format(invoice.total) }}</td>
                 <td>{{ invoice.paid_date.strftime('%Y-%m-%d') if invoice.is_paid else ''}}</td>
+                <td>{{ invoice.notes if invoice.notes is not none else '' }}</td>
             </tr>
         {% endfor %}
         </table>

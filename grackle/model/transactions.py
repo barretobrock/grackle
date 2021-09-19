@@ -11,6 +11,7 @@ from sqlalchemy import (
 )
 from sqlalchemy.orm import relationship
 from .base import Base
+from .accounts import Currencies
 
 
 class ReconciledStates(enum.Enum):
@@ -34,3 +35,4 @@ class TableTransactions(Base):
     memo = Column(VARCHAR)
     invoice_id = Column(VARCHAR)    # Optional reference to an invoice that the transaction settled
     amount = Column(Float, nullable=False)
+    currency = Column(Enum(Currencies), default=Currencies.USD, nullable=False)

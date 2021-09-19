@@ -1,8 +1,8 @@
 """Configuration setup"""
 import os
+from datetime import datetime
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-from easylogger import Log
 from grackle._version import get_versions
 from grackle.model import Base
 
@@ -21,6 +21,7 @@ class BaseConfig(object):
     BACKUP_DIR = os.path.join(DATA_DIR, 'gnucash_backups')
     KEY_DIR = os.path.join(os.path.expanduser('~'), 'keys')
     GNUCASH_PATH = os.path.join(DATA_DIR, 'gnucash_sqlite.gnucash')
+    GNU_LAST_UPDATE = datetime.fromtimestamp(os.path.getmtime(GNUCASH_PATH)) if os.path.exists(GNUCASH_PATH) else None
 
     DB_PATH = os.path.join(DATA_DIR, 'personalfin.db')
     if not os.path.exists(DB_PATH):
@@ -40,10 +41,10 @@ class BaseConfig(object):
 class DevelopmentConfig(BaseConfig):
     """Configuration for development environment"""
     DEBUG = True
-    LOG = Log('grackle', log_level_str='DEBUG')
+    LOG_LEVEL = 'DEBUG'
 
 
 class ProductionConfig(BaseConfig):
     """Configuration for production environment"""
     DEBUG = False
-    LOG = Log('grackle', log_level_str='INFO')
+    LOG_LEVEL = 'INFO'

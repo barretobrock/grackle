@@ -1,6 +1,31 @@
-
+/* main page */
+body {
+    padding-bottom: 70px;
+}
 .nav-logo {
     width: 25px;
+}
+
+.nav-item.active > a {
+    color: #ffdb00 !important;
+}
+
+/* footer */
+footer .container {
+    width: 100%;
+    line-height: 60px;
+}
+
+/*Compare form section*/
+form > div.mvm-section {
+    background-color: antiquewhite;
+    padding: 15px;
+    border: 1px dotted #acacac;
+}
+.mvm-submit {
+    float: right;
+    left: 15px;
+    position: relative;
 }
 
 /* Finance tables */
@@ -41,8 +66,4 @@ table tr.total,
 
 #invoice-title {
     font-size: 2em;
-}
-
-#invoice-info div span {
-    display: block;
 }

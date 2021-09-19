@@ -6,11 +6,12 @@ from flask import (
     Blueprint,
     flash,
     redirect,
-    url_for
+    url_for,
+    request
 )
 from sqlalchemy.sql import and_
-from grackle.model import TableTransactions, AccountClass, TableInvoices, TableInvoiceEntries
-import routes.app as rapp
+from grackle.model import TableTransactions, AccountClass, TableInvoices
+import grackle.routes.app as rapp
 
 
 fin = Blueprint('finances', __name__)
@@ -21,13 +22,32 @@ def page_not_found(e):
     return render_template('404.html', error_msg=e), 404
 
 
-@fin.route('/refresh')
-def refresh_book():
-    # TODO Optionally tie this in with the upload endpoint and have separate endpoints to
-    #  refresh specific parts if not all are needed (transactions, invoices, etc)
-    # current_app.config['GNC'].refresh_book()
-    flash('Financial data refresh successful.', 'alert alert-success')
-    return redirect(url_for('main.index'))
+@fin.route('/period-select', methods=['GET'])
+def period_select():
+    pass
+
+
+@fin.route('/select-mvm', methods=['GET', 'POST'])
+def select_mvm():
+    """Page to select months to compare"""
+    if request.method == 'POST':
+        p_list = []
+        for i in range(1, 3):
+            yyyy = request.values.get(f'p{i}-year')
+            mm = request.values.get(f'p{i}-month')
+            p_list.append(f'{int(mm):02d}-{yyyy}')
+        p1, p2 = p_list
+        return redirect(url_for('finances.get_mvm', p1=p1, p2=p2))
+    else:
+        years = [i + 2020 for i in range(datetime.now().year - 2020 + 1)]
+        return render_template('select-mvm.html', years=years, current=datetime.now(),
+                               previous=(datetime.now().replace(day=1) - timedelta(days=1)).replace(day=1))
+
+
+@fin.route('/select-mvb')
+def select_mvb():
+    """Page to select month to compare with budget"""
+    pass
 
 
 @fin.route('/mvm/<string:p1>/<string:p2>')
@@ -88,6 +108,7 @@ def get_mvb(period: str):
 def budget_analysis():
     """For rendering a broad graphic analysis of spend over the months compared to set budgets"""
     # TODO: here
+    #   include a place for Unallocated amounts and set a budget for that as well
     pass
 
 
@@ -95,7 +116,7 @@ def budget_analysis():
 def get_invoices():
     """For rendering a list of invoices, marking which ones might be due"""
     # Query all invoices
-    invoices = rapp.db.session.query(TableInvoices).order_by(TableInvoices.invoice_no.desc()).all()
+    invoices = rapp.db.session.query(TableInvoices).order_by(TableInvoices.invoice_no.desc()).limit(10).all()
 
     return render_template('invoices.html', invoices=invoices)
 

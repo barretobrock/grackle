@@ -1,0 +1,43 @@
+{% extends 'base.html' %}
+
+{% block content %}
+   <h2>Select months to compare</h2>
+    <form action="/select-mvm" method="POST" enctype="multipart/form-data">
+        {% for section in range(1, 3) %}
+            {% set label = 'Focus' if section == 1 else 'Compare' %}
+            <div class="row mvm-section">
+                <div class="col">
+                    <label for="p{{ section }}YearControl">{{ label }} Year</label>
+                    <select id="p{{ section }}YearControl" class="form-control" name="p{{ section }}-year">
+                        {% for i in years %}
+                            {% if label == 'Focus' and i == current.year %}
+                                <option selected>{{ i }}</option>
+                            {% elif label == 'Compare' and i == previous.year %}
+                                <option selected>{{ i }}</option>
+                            {% else %}
+                                <option>{{ i }}</option>
+                            {% endif %}
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col">
+                    <label for="p{{ section }}MonthControl">{{ label }} Month</label>
+                    <select id="p{{ section }}MonthControl" class="form-control" name="p{{ section }}-month">
+                        {% for i in range(1, 13) %}
+                            {% if label == 'Focus' and i == current.month %}
+                                <option selected>{{ i }}</option>
+                            {% elif label == 'Compare' and i == previous.month %}
+                                <option selected>{{ i }}</option>
+                            {% else %}
+                                <option>{{ i }}</option>
+                            {% endif %}
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+        {% endfor %}
+        <div class="form-group mvm-submit">
+            <input class="btn btn-primary mvm-submit-btn" type="submit" value="Submit">
+        </div>
+    </form>
+{% endblock %}
