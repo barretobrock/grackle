@@ -3,6 +3,7 @@ from sqlalchemy import (
     Column,
     Integer,
     ForeignKey,
+    Boolean,
     Text,
     VARCHAR,
     Float,
@@ -11,7 +12,6 @@ from sqlalchemy import (
 )
 from sqlalchemy.orm import relationship
 from .base import Base
-from .accounts import Currencies
 
 
 class ReconciledStates(enum.Enum):
@@ -21,18 +21,25 @@ class ReconciledStates(enum.Enum):
     y = 'Reconciled'
 
 
-class TableTransactions(Base):
-    """Transactions table"""
-    __tablename__ = 'transactions'
-
-    id = Column(Integer, primary_key=True, autoincrement=True)
+class TableTransaction(Base):
+    """Transaction table"""
+    transaction_id = Column(Integer, primary_key=True, autoincrement=True)
     guid = Column(VARCHAR)
-    account_id = Column(Integer, ForeignKey('accounts.id'), nullable=False)
-    account = relationship('TableAccounts', back_populates='transactions')
     transaction_date = Column(TIMESTAMP, nullable=False)
-    reconciled_state = Column(Enum(ReconciledStates), default=ReconciledStates.n, nullable=False)
+    splits = relationship('TableTransactionSplit', back_populates='transaction')
+    is_scheduled = Column(Boolean, default=False)
     desc = Column(Text)
+
+
+class TableTransactionSplit(Base):
+    """Transaction Split table"""
+    transaction_split_id = Column(Integer, primary_key=True, autoincrement=True)
+    transaction_key = Column(Integer, ForeignKey('transaction.transaction_id'), nullable=False)
+    transaction = relationship('TableTransaction', back_populates='splits')
+    account_key = Column(Integer, ForeignKey('account.account_id'), nullable=False)
+    account = relationship('TableAccount', back_populates='transaction_splits')
+    reconciled_state = Column(Enum(ReconciledStates), default=ReconciledStates.n, nullable=False)
+    is_credit = Column(Boolean)
     memo = Column(VARCHAR)
-    invoice_id = Column(VARCHAR)    # Optional reference to an invoice that the transaction settled
+    invoice_no = Column(VARCHAR)    # Optional reference to an invoice that the transaction settled
     amount = Column(Float, nullable=False)
-    currency = Column(Enum(Currencies), default=Currencies.USD, nullable=False)

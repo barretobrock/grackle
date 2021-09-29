@@ -10,7 +10,12 @@ from flask import (
     request
 )
 from sqlalchemy.sql import and_
-from grackle.model import TableTransactions, AccountClass, TableInvoices
+from grackle.model import (
+    TableTransactions,
+    AccountClass,
+    TableInvoices,
+    TableBudget
+)
 import grackle.routes.app as rapp
 
 
@@ -20,11 +25,6 @@ fin = Blueprint('finances', __name__)
 @fin.errorhandler(404)
 def page_not_found(e):
     return render_template('404.html', error_msg=e), 404
-
-
-@fin.route('/period-select', methods=['GET'])
-def period_select():
-    pass
 
 
 @fin.route('/select-mvm', methods=['GET', 'POST'])
@@ -42,12 +42,6 @@ def select_mvm():
         years = [i + 2020 for i in range(datetime.now().year - 2020 + 1)]
         return render_template('select-mvm.html', years=years, current=datetime.now(),
                                previous=(datetime.now().replace(day=1) - timedelta(days=1)).replace(day=1))
-
-
-@fin.route('/select-mvb')
-def select_mvb():
-    """Page to select month to compare with budget"""
-    pass
 
 
 @fin.route('/mvm/<string:p1>/<string:p2>')
@@ -88,8 +82,7 @@ def get_mvm(p1: str, p2: str):
     # Ensure column order (p1 is always the focus, p2 always the comparison)
     pivoted = pivoted[['class', 'account', p1, p2, 'change']]
     # Split into separate income / expenses; invert income, as it typically is negative
-    income_df = pivoted.loc[pivoted['class'] == 'INCOME', ].drop('class', axis=1).apply(
-        lambda x: x * -1 if x.dtype.kind in 'iufc' else x)
+    income_df = pivoted.loc[pivoted['class'] == 'INCOME', ].drop('class', axis=1)
     expense_df = pivoted.loc[pivoted['class'] == 'EXPENSE', ].drop('class', axis=1)
     # Sum income / expenses
     income_df = income_df.append(income_df.sum(numeric_only=True), ignore_index=True).fillna('Total')
@@ -97,19 +90,79 @@ def get_mvm(p1: str, p2: str):
     return render_template('compare.html', income_df=income_df, expense_df=expense_df)
 
 
+@fin.route('/select-mvb', methods=['GET', 'POST'])
+def select_mvb():
+    """Page to select month to compare with budget"""
+    if request.method == 'POST':
+        yyyy = request.values.get(f'pd-year')
+        mm = request.values.get(f'pd-month')
+        period = f'{int(mm):02d}-{yyyy}'
+        return redirect(url_for('finances.get_mvb', period=period))
+    else:
+        years = [i + 2020 for i in range(datetime.now().year - 2020 + 1)]
+        return render_template('select-mvb.html', years=years, current=datetime.now())
+
+
 @fin.route('/mvb/<string:period>')
 def get_mvb(period: str):
     """For rendering a month v budget comparison"""
-    # TODO: here
-    pass
+    # Confirm strings are of MM-YYYY format
+    if re.match(r'\d{2}-\d{4}', period) is None:
+        return page_not_found(ValueError(f'The provided value did not match the '
+                                         f'expected syntax: mm-yyyy: "{period}"'))
+    df = pd.DataFrame()
+    p_mm, p_yy = [int(x) for x in period.split('-')]
+    # Collect the target period's data
+    p_st = datetime(p_yy, p_mm, 1)
+    p_end = (p_st + timedelta(days=33)).replace(day=1) - timedelta(days=1)
+    p_data = rapp.db.session.query(TableTransactions).filter(
+        and_(TableTransactions.transaction_date >= p_st, TableTransactions.transaction_date <= p_end)).all()
+    if len(p_data) == 0:
+        df = df.append(pd.DataFrame({'period': period}, index=[0]))
+    for row in p_data:
+        if row.account.account_class not in [AccountClass.INCOME, AccountClass.EXPENSE]:
+            continue
+        if row.account.account_currency.name not in ['USD']:
+            continue
+        # Load data into dataframe
+        df = df.append(pd.DataFrame({
+            'period': 'actual',
+            'class': row.account.account_class.name,
+            'account': row.account.friendly_name,
+            'amt': row.amount,
+            'cur': row.account.account_currency.name,
+        }, index=[0]))
+    # Collect the budget for the target period
+    b_data = rapp.db.session.query(TableBudget).filter(
+        and_(TableBudget.month == p_mm, TableBudget.year == p_yy)).all()
+    for row in b_data:
+        if row.account.account_class not in [AccountClass.INCOME, AccountClass.EXPENSE]:
+            continue
+        if row.account.account_currency.name not in ['USD']:
+            continue
+        # Load data into dataframe
+        df = df.append(pd.DataFrame({
+            'period': 'budget',
+            'class': row.account.account_class.name,
+            'account': row.account.friendly_name,
+            'amt': row.amount,
+            'cur': row.account.account_currency.name,
+        }, index=[0]))
 
-
-@fin.route('/budget-analysis')
-def budget_analysis():
-    """For rendering a broad graphic analysis of spend over the months compared to set budgets"""
-    # TODO: here
-    #   include a place for Unallocated amounts and set a budget for that as well
-    pass
+    # Consolidate the dataframe
+    pivoted = df.pivot_table(index=['class', 'account'], columns=['period'],
+                             values='amt', aggfunc='sum').fillna(0).reset_index()
+    # Add in a delta column
+    pivoted['change'] = pivoted['actual'] - pivoted['budget']
+    # Ensure column order (p1 is always the focus, p2 always the comparison)
+    pivoted = pivoted[['class', 'account', 'budget', 'actual', 'change']]
+    # Split into separate income / expenses; invert income, as it typically is negative
+    income_df = pivoted.loc[pivoted['class'] == 'INCOME',].drop('class', axis=1)
+    expense_df = pivoted.loc[pivoted['class'] == 'EXPENSE',].drop('class', axis=1)
+    # Sum income / expenses
+    income_df = income_df.append(income_df.sum(numeric_only=True), ignore_index=True).fillna('Total')
+    expense_df = expense_df.append(expense_df.sum(numeric_only=True), ignore_index=True).fillna('Total')
+    return render_template('compare.html', title=f'Budget v. Actual: {period}', income_df=income_df, expense_df=expense_df)
 
 
 @fin.route('/invoices')
