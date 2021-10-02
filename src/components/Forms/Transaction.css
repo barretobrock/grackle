@@ -1,0 +1,8 @@
+.ui.segment {
+    background-color: #3d3d3d !important;
+}
+
+.transaction-form .field > label {
+    font-weight: normal !important;
+    color: #acacac !important;
+}
