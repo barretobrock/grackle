@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 import os
-from grackle.routes.app import create_app
+from app import create_app
 from grackle.settings import auto_config
 
 

@@ -1,6 +1,5 @@
 import React, {Component} from "react";
-import axios from "axios";
-import {Form, Grid} from "semantic-ui-react";
+import {Button, Form} from "semantic-ui-react";
 // Local imports
 import './TransactionSplit.css'
 import Amount from "./Amount";
@@ -13,6 +12,7 @@ class TransactionSplit extends Component {
     constructor(props) {
         super(props);
         this.handleAccountChange = this.handleAccountChange.bind(this);
+        this.handleAmountChange = this.handleAmountChange.bind(this);
         this.state = {
             selectedAccount: '',
             credit: 0,
@@ -22,6 +22,11 @@ class TransactionSplit extends Component {
         }
     }
 
+    componentDidMount() {
+        if(this.props.transactionId){
+            console.log("heere " + this.props.transactionId);
+        }
+    }
 
     handleAccountChange = (split_id, acctDict) => {
         this.props.onAccountChange(split_id, acctDict);
@@ -31,13 +36,15 @@ class TransactionSplit extends Component {
         this.props.onAmountChange(split_id, name, value);
     }
 
-    handleMemoChange = (id, value) => {
-        this.setState({memo: value});
-        console.log('Memo changed: ' + value);
+    handleMemoChange = (split_id, value) => {
+        this.props.onMemoChange(split_id, 'memo', value);
     }
-    handleAddToInvoiceChange = (id, value) => {
-        this.setState({addToInvoice: value});
-        console.log('A2I changed: ' + value);
+    handleAddToInvoiceChange = (split_id, value) => {
+        this.props.onAddToInvoiceChange(split_id, 'addToInvoice', value);
+    }
+
+    handleRemoveClick = (event, data) => {
+        this.props.onRemoveClicked(data.split_id);
     }
 
     render() {
@@ -55,22 +62,33 @@ class TransactionSplit extends Component {
                     width={3}
                     control={Amount}
                     split_id={this.props.split_id}
-                    id={'amt_selection_1'}
+                    id={'amt_selection-' + this.props.split_id}
                     onChange={this.handleAmountChange}
                 />
                 <Form.Field
                     label={'Memo'}
                     width={2}
                     control={Memo}
-                    id={'memo_selection_1'}
+                    split_id={this.props.split_id}
+                    id={'memo_selection-' + this.props.split_id}
                     onChange={this.handleMemoChange}
                 />
                 <Form.Field
-                    label={'Invoice'}
+                    label={'Add to Invoice'}
+                    width={1}
                     control={AddToInvoiceCheckbox}
-                    id={'a2i-1'}
+                    split_id={this.props.split_id}
+                    id={'a2i-' + this.props.split_id}
                     onChange={this.handleAddToInvoiceChange}
                 />
+                <Button
+                    negative
+                    icon={'trash alternate outline'}
+                    size={'small'}
+                    split_id={this.props.split_id}
+                    compact
+                    onClick={this.handleRemoveClick}
+                    className={'delete-split'} />
             </Form.Group>
         )
     }

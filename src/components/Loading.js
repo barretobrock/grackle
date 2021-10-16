@@ -1,7 +1,12 @@
 import React from "react";
-import { Loader } from "semantic-ui-react";
-import ReactDelayRender from 'react-delay-render';
+import { Dimmer, Loader } from "semantic-ui-react";
 
-const Loading = () => <Loader active size={'massive'} />;
+const Loading = () => {
+    return(
+        <Dimmer active size={'massive'}>
+            <Loader>Loading</Loader>
+        </Dimmer>
+    )
+}
 
-export default ReactDelayRender({ delay: 300 })(Loading);
+export default Loading;

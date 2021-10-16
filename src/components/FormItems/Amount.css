@@ -12,5 +12,5 @@ input[type=number] {
 }
 
 input {
-  text-align: right;
+  text-align: right !important;
 }

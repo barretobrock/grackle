@@ -14,7 +14,7 @@ class BaseConfig(object):
     UPDATE_DATE = _v['date']
     PORT = 5006
     # Stuff for frontend
-    STATIC_DIR_PATH = '../static'
+    STATIC_DIR_PATH = '../build'
     TEMPLATE_DIR_PATH = '../templates'
     # backend
     DATA_DIR = os.path.join(os.path.expanduser('~'), 'data')

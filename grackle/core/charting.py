@@ -3,14 +3,16 @@ from datetime import datetime
 from colorsys import rgb_to_hls, hls_to_rgb
 from typing import Union, List, Tuple
 import pandas as pd
+from sqlalchemy.sql import and_
 import plotly.graph_objs as go
 from grackle.model import (
-    TableAccounts,
-    TableBudget,
-    TableTransactions,
-    TableInvoices
+    TableAccount,
+    TableTransaction,
+    TableTransactionSplit,
+    AccountClass,
+    Currencies
 )
-import grackle.routes.app as grapp
+import app as grapp
 
 
 class ChartPrep:
@@ -78,15 +80,15 @@ class ChartPrep:
         if account_full_name is not None:
             if isinstance(account_full_name, str):
                 account_full_name = [account_full_name]
-            filter_cond = TableAccounts.fullname.in_(account_full_name)
+            filter_cond = TableAccount.fullname.in_(account_full_name)
         elif friendly_name is not None:
             if isinstance(friendly_name, str):
                 friendly_name = [friendly_name]
-            filter_cond = TableAccounts.friendly_name.in_(friendly_name)
+            filter_cond = TableAccount.friendly_name.in_(friendly_name)
         else:
             raise ValueError('account_full_name or friendly_name must not be NoneType!')
-        transactions = grapp.db.session.query(TableTransactions).join(
-            TableTransactions.account, aliased=True).filter(filter_cond).all()
+        transactions = grapp.db.session.query(TableTransactionSplit).join(
+            TableTransactionSplit.account, aliased=True).filter(filter_cond).all()
         df = pd.DataFrame()
         for t in transactions:
             df = df.append({
@@ -154,3 +156,34 @@ class ChartPrep:
                     )
 
         return fig
+
+    @classmethod
+    def get_monthly_activity(cls, acct_filter: str, acct_class: AccountClass = AccountClass.EXPENSE,
+                             acct_cur: Currencies = Currencies.USD, start_date: datetime = None) -> pd.DataFrame:
+        """Gets all transactions for budget analysis"""
+        if start_date is None:
+            start_date = datetime(2020, 1, 1)
+        if acct_filter is None:
+            acct_filter = r'.*'
+        transactions = grapp.db.session.query(TableTransactionSplit).join(
+            TableTransactionSplit.account, aliased=True).filter(and_(
+                TableAccount.account_currency == acct_cur,
+                TableAccount.account_class == acct_class,
+                TableTransaction.transaction_date >= start_date
+            )).all()
+        df = pd.DataFrame()
+        for row in transactions:
+            if re.match(acct_filter, row.account.friendly_name) is None:
+                continue
+            # Load data into dataframe
+            df = df.append(pd.DataFrame({
+                'date': row.transaction_date,
+                'class': row.account.account_class.name,
+                'account': row.account.friendly_name,
+                'amt': row.amount,
+                'cur': row.account.account_currency.name,
+            }, index=[0]))
+        # Group by month, year
+        df = df.set_index('date')
+        grouped = df.groupby([pd.Grouper(freq='M'), 'cur', 'account']).sum().reset_index()
+        return grouped

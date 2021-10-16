@@ -1,13 +1,13 @@
 import {useState} from "react";
 import {Input} from "semantic-ui-react";
 
-const Memo = ({ id, onChange }) => {
+const Memo = ({ split_id, onChange }) => {
     const [memo, setMemo] = useState('');
 
     const handleChange = (event) => {
         const memo = event.target.value;
         setMemo(memo);
-        onChange(id, memo);
+        onChange(split_id, memo);
     }
 
     return(

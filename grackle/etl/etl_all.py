@@ -4,23 +4,25 @@ from easylogger import Log
 from grackle.settings import auto_config
 from grackle.model import (
     Base,
-    TableAccounts,
+    TableAccount,
     TableBudget,
-    TableInvoices,
-    TableInvoiceEntries,
-    TableTransactions
+    TableInvoice,
+    TableInvoiceEntry,
+    TableTransaction,
+    TableTransactionSplit
 )
-from grackle.core import GNUCashProcessor
+from grackle.core.finances import GNUCashProcessor
 
 
 class ETL:
     """For holding all the various ETL processes, delimited by table name or function of data stored"""
     TABLES = [
-        TableAccounts.__tablename__,
+        TableAccount.__tablename__,
         TableBudget.__tablename__,
-        TableInvoices.__tablename__,
-        TableInvoiceEntries.__tablename__,
-        TableTransactions.__tablename__
+        TableInvoice.__tablename__,
+        TableInvoiceEntry.__tablename__,
+        TableTransaction.__tablename__,
+        TableTransactionSplit.__tablename__
     ]
 
     def __init__(self, tables: List[str] = None, parent_log: Log = None):
@@ -46,6 +48,8 @@ class ETL:
 
 if __name__ == '__main__':
     os.environ['GRACKLE_ENV'] = 'DEVELOPMENT'
-    etl = ETL(tables=ETL.TABLES)
+
+    test_log = Log('etl', log_level_str='DEBUG')
+    etl = ETL(tables=ETL.TABLES, parent_log=test_log)
     etl.gnc.etl_accounts_transactions_budget()
     etl.gnc.etl_invoices()

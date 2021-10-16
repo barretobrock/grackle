@@ -4,8 +4,8 @@ import { Header } from "semantic-ui-react";
 import Layout from "./Layout";
 import TransactionSplit from "./FormItems/TransactionSplit";
 import Amount from "./FormItems/Amount";
-import DatePicker from "./FormItems/DatePicker";
 import TransactionForm from "./Forms/Transaction";
+import TransactionView from "./Views/Transaction";
 
 const TestPage = () => {
 
@@ -16,8 +16,8 @@ const TestPage = () => {
             <Header as={'h2'}>Test Page</Header>
             {/*<TransactionSplit />*/}
             {/*<Amount />*/}
-            {/*<DatePicker id={'dp'} lastDate={date}/>*/}
-            <TransactionForm />
+            {/*<TransactionForm />*/}
+            <TransactionView />
         </Layout>
     );
 };

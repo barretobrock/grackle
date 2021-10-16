@@ -1,0 +1,6 @@
+.ui.table thead tr:first-child > th {
+    position: sticky !important;
+    top: 55px;
+    z-index: 2;
+    background-color: #2a2828 !important;
+}

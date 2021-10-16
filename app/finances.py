@@ -4,19 +4,18 @@ import pandas as pd
 from flask import (
     render_template,
     Blueprint,
-    flash,
     redirect,
     url_for,
     request
 )
 from sqlalchemy.sql import and_
 from grackle.model import (
-    TableTransactions,
+    TableTransactionSplit,
     AccountClass,
-    TableInvoices,
+    TableInvoice,
     TableBudget
 )
-import grackle.routes.app as rapp
+import app.app as rapp
 
 
 fin = Blueprint('finances', __name__)
@@ -57,8 +56,9 @@ def get_mvm(p1: str, p2: str):
         # Collect the 1st period's data
         p_st = datetime(p_yy, p_mm, 1)
         p_end = (p_st + timedelta(days=33)).replace(day=1) - timedelta(days=1)
-        p_data = rapp.db.session.query(TableTransactions).filter(
-            and_(TableTransactions.transaction_date >= p_st, TableTransactions.transaction_date <= p_end)).all()
+        p_data = rapp.db.session.query(TableTransactionSplit).filter(
+            and_(TableTransactionSplit.transaction.transaction_date >= p_st,
+                 TableTransactionSplit.transaction.transaction_date <= p_end)).all()
         if len(p_data) == 0:
             df = df.append(pd.DataFrame({'period': p}, index=[0]))
         for row in p_data:
@@ -115,8 +115,9 @@ def get_mvb(period: str):
     # Collect the target period's data
     p_st = datetime(p_yy, p_mm, 1)
     p_end = (p_st + timedelta(days=33)).replace(day=1) - timedelta(days=1)
-    p_data = rapp.db.session.query(TableTransactions).filter(
-        and_(TableTransactions.transaction_date >= p_st, TableTransactions.transaction_date <= p_end)).all()
+    p_data = rapp.db.session.query(TableTransactionSplit).filter(
+        and_(TableTransactionSplit.transaction.transaction_date >= p_st,
+             TableTransactionSplit.transaction.transaction_date <= p_end)).all()
     if len(p_data) == 0:
         df = df.append(pd.DataFrame({'period': period}, index=[0]))
     for row in p_data:
@@ -169,7 +170,7 @@ def get_mvb(period: str):
 def get_invoices():
     """For rendering a list of invoices, marking which ones might be due"""
     # Query all invoices
-    invoices = rapp.db.session.query(TableInvoices).order_by(TableInvoices.invoice_no.desc()).limit(10).all()
+    invoices = rapp.db.session.query(TableInvoice).order_by(TableInvoice.invoice_no.desc()).limit(10).all()
 
     return render_template('invoices.html', invoices=invoices)
 
@@ -177,5 +178,5 @@ def get_invoices():
 @fin.route('/invoice/<string:invoice_no>')
 def get_invoice(invoice_no: str):
     """For rendering an individual invoice"""
-    invoice = rapp.db.session.query(TableInvoices).filter(TableInvoices.invoice_no == invoice_no).one_or_none()
+    invoice = rapp.db.session.query(TableInvoice).filter(TableInvoice.invoice_no == invoice_no).one_or_none()
     return render_template('invoice.html', invoice=invoice)

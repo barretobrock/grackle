@@ -1,10 +1,12 @@
 {% extends 'base.html' %}
 
 {% block content %}
-    <h2>Personal Finance</h2>
+    <h2>{{ title }}</h2>
     <div id="mvm-table" >
         {% for name, df in [['expense', expense_df], ['income', income_df]] %}
-        <div>{{ name.title() }}</div>
+        <div>
+            <h3>{{ name.title() }}</h3>
+        </div>
         <table class="table table-bordered {{ name }}-table">
             <thead>
                 <tr>

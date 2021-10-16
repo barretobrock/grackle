@@ -1,10 +1,12 @@
-from flask import Flask
+from flask import (
+    Flask
+)
 from flask_sqlalchemy import SQLAlchemy
 from easylogger import Log
 from grackle.settings import auto_config
 from .api import api
 from .main import main
-from .chart import cht
+from .chart import chart
 from .finances import fin
 
 
@@ -23,7 +25,9 @@ def create_app(*args, **kwargs) -> Flask:
 
     db.init_app(app)
     # Register routes
-    for rt in [api, main, cht, fin]:
+    for rt in [api, main, chart, fin]:
         app.register_blueprint(rt)
+
+    app.config['db'] = db
 
     return app

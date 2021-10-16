@@ -1,5 +1,5 @@
 import { useState} from "react";
-import {Form, Input} from "semantic-ui-react";
+import {Form} from "semantic-ui-react";
 // local imports
 import './Amount.css'
 
@@ -24,6 +24,7 @@ const Amount = ({ split_id, onChange }) => {
                 label={'Credit (-)'}
                 placeholder={'Credit (-)'}
                 type={'number'}
+                id={'credit-' + split_id}
                 name={'credit'}
                 value={credit}
                 onChange={handleChange}
@@ -33,6 +34,7 @@ const Amount = ({ split_id, onChange }) => {
                 label={'Debit (+)'}
                 placeholder={'Debit (+)'}
                 type={'number'}
+                 id={'debit-' + split_id}
                 name={'debit'}
                 value={debit}
                 onChange={handleChange}

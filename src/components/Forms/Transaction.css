@@ -6,3 +6,21 @@
     font-weight: normal !important;
     color: #acacac !important;
 }
+
+/* Total */
+.total-box,
+.total-box .input{
+    opacity: 1 !important;
+    text-align: right;
+    color: #acacac;
+}
+
+/* Form rows */
+.transaction-form.ui.form .fields {
+    margin: 0;
+}
+
+/* Buttons at the bottom */
+div.main-buttons {
+    padding-top: 10px;
+}

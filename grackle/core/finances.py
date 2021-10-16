@@ -3,21 +3,31 @@ import re
 import functools
 from shutil import copyfile
 from datetime import datetime
-from typing import List, Dict, Union, Optional
-import sqlalchemy
+from typing import (
+    List,
+    Dict,
+    Union,
+    Optional
+)
 from sqlalchemy.orm import Session
 from easylogger import Log
 import piecash
-from piecash.core.book import Book, Account, Split
-from piecash.business.invoice import Entry, Invoice
-import pandas as pd
+from piecash.core.book import (
+    Book,
+    Account,
+    Split
+)
+from piecash.business.invoice import (
+    Entry,
+    Invoice
+)
 from grackle.model import (
-    Base,
-    TableAccounts,
+    TableAccount,
     TableBudget,
-    TableInvoices,
-    TableInvoiceEntries,
-    TableTransactions,
+    TableInvoice,
+    TableInvoiceEntry,
+    TableTransaction,
+    TableTransactionSplit,
     Currencies,
     ReconciledStates,
     AccountClass,
@@ -80,6 +90,9 @@ class GNUCashProcessor:
             AccountCategory.CREDIT_CARD: r'(.*Liabilities.Credit Cards.*)',
             AccountCategory.LOAN: r'(.*Liabilities.Loans.*)'
         }
+
+        transaction_rows = []
+
         acc: Account
         for acc in self.book.accounts:
             self.log.debug(f'Working on: {acc.fullname}')
@@ -107,9 +120,9 @@ class GNUCashProcessor:
                 friendly_name = '-'.join(name_splits[2:])
             else:
                 friendly_name = '-'.join(name_splits)
-            acc_obj = TableAccounts(account_class=acc_class, account_category=acc_cat,
-                                    account_currency=acc_cur, is_hidden=acc.hidden,
-                                    fullname=fullname, friendly_name=friendly_name)
+            acc_obj = TableAccount(account_class=acc_class, account_category=acc_cat,
+                                   account_currency=acc_cur, is_hidden=acc.hidden,
+                                   fullname=fullname, friendly_name=friendly_name)
             if len(acc.budget_amounts) > 0:
                 for bdg in acc.budget_amounts:
                     bdg_year = bdg.budget.recurrence.recurrence_period_start.year
@@ -129,15 +142,26 @@ class GNUCashProcessor:
                             if invoice is not None:
                                 invoice_no = invoice.id
                 value = split.value
-                if acc_class == AccountClass.INCOME and split.is_credit and value < 0:
-                    # Invert negative income, as it's a negative credit
-                    value *= -1
-                t = TableTransactions(guid=split.transaction_guid, transaction_date=split.transaction.post_date,
-                                      reconciled_state=ReconciledStates[split.reconcile_state],
-                                      desc=split.transaction.description, memo=split.memo, invoice_id=invoice_no,
-                                      amount=value, currency=acc_cur)
-                acc_obj.transactions.append(t)
+
+                transaction = next(iter(x for x in transaction_rows if x.guid == split.transaction_guid), None)
+                if transaction is None:
+                    transaction = TableTransaction(
+                        guid=split.transaction_guid,
+                        transaction_date=split.transaction.post_date,
+                        desc=split.transaction.description
+                    )
+                    transaction_rows.append(transaction)
+                transaction_split = TableTransactionSplit(
+                    transaction=transaction,
+                    reconciled_state=ReconciledStates[split.reconcile_state],
+                    is_credit=split.is_credit,
+                    memo=split.memo,
+                    invoice_no=invoice_no,
+                    amount=value
+                )
+                acc_obj.transaction_splits.append(transaction_split)
             self.session.add(acc_obj)
+        self.session.add_all(transaction_rows)
         self.session.commit()
 
     @_Decorators.check_book
@@ -150,23 +174,23 @@ class GNUCashProcessor:
             if invoice.id == '000001':
                 # Unclosed test invoice?
                 continue
-            related_transactions = self.session.query(TableTransactions).filter(
-                TableTransactions.invoice_id == invoice.id).all()
+            related_transactions = self.session.query(TableTransactionSplit).filter(
+                TableTransactionSplit.invoice_no == invoice.id).all()
             if len(related_transactions) > 0:
                 is_paid = any(x.amount < 0 for x in related_transactions)
-                pmt_date = related_transactions[0].transaction_date
+                pmt_date = related_transactions[0].transaction.transaction_date
             else:
                 is_paid = False
                 pmt_date = None
-            invoice_obj = TableInvoices(invoice_no=invoice.id, created_date=invoice.date_opened,
-                                        is_posted=invoice.date_posted is not None, posted_date=invoice.date_posted,
-                                        is_paid=is_paid, paid_date=pmt_date, notes=invoice.notes)
+            invoice_obj = TableInvoice(invoice_no=invoice.id, created_date=invoice.date_opened,
+                                       is_posted=invoice.date_posted is not None, posted_date=invoice.date_posted,
+                                       is_paid=is_paid, paid_date=pmt_date, notes=invoice.notes)
             i_entries = invoice.entries
             entry: Entry
             for entry in i_entries:
-                entry_obj = TableInvoiceEntries(invoice_id=invoice_obj.id, transaction_date=entry.date,
-                                                description=entry.description, quantity=entry.quantity,
-                                                unit_price=entry.i_price, discount=entry.i_discount)
+                entry_obj = TableInvoiceEntry(invoice_key=invoice_obj.invoice_id, transaction_date=entry.date,
+                                              description=entry.description, quantity=entry.quantity,
+                                              unit_price=entry.i_price, discount=entry.i_discount)
                 invoice_obj.entries.append(entry_obj)
             self.session.add(invoice_obj)
             self.session.commit()

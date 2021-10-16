@@ -1,0 +1,26 @@
+{% extends 'base.html' %}
+
+{% block content %}
+    <h2>Budget Analysis</h2>
+    <form method="POST" action="{{ url_for('charts.budget_analysis') }}">
+        {{ form.csrf_token }}
+        <fieldset class="form-field">
+            {{ form.account_regex.label }}
+            {{ form.account_regex }}
+            {% if form.account_regex.errors %}
+                <ul class="errors">
+                    {% for error in form.account_regex.errors %}
+                        <li>{{ error }}</li>
+                    {% endfor %}
+                </ul>
+            {% endif %}
+        </fieldset>
+        {{ form.submit }}
+    </form>
+    <div id="budget-analysis-chart" class="chart"></div>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <script type="text/javascript">
+        var graphs = {{graphJSON | safe}};
+        Plotly.plot("budget-analysis-chart", graphs, {});
+    </script>
+{% endblock %}

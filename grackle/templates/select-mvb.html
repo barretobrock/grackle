@@ -1,0 +1,36 @@
+{% extends 'base.html' %}
+
+{% block content %}
+   <h2>Select month to compare with budget</h2>
+    <form action="/select-mvb" method="POST" enctype="multipart/form-data">
+        <div class="row mvm-section">
+            <div class="col">
+                <label for="pdYearControl">Year</label>
+                <select id="pdYearControl" class="form-control" name="pd-year">
+                    {% for i in years %}
+                        {% if i == current.year %}
+                            <option selected>{{ i }}</option>
+                        {% else %}
+                            <option>{{ i }}</option>
+                        {% endif %}
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col">
+                <label for="pdMonthControl">Month</label>
+                <select id="pdMonthControl" class="form-control" name="pd-month">
+                    {% for i in range(1, 13) %}
+                        {% if i == current.month %}
+                            <option selected>{{ i }}</option>
+                        {% else %}
+                            <option>{{ i }}</option>
+                        {% endif %}
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+        <div class="form-group mvm-submit">
+            <input class="btn btn-primary mvm-submit-btn" type="submit" value="Submit">
+        </div>
+    </form>
+{% endblock %}
