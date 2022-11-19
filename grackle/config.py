@@ -1,6 +1,6 @@
 """Configuration setup"""
 import os
-from pathlib import Path
+import pathlib
 from datetime import datetime
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
@@ -8,23 +8,34 @@ from grackle import __version__, __update_date__
 from grackle.model import Base
 
 
+def get_local_secret_key(path: pathlib.Path) -> str:
+    """Grabs a locally-stored secret"""
+    if not path.exists():
+        raise FileNotFoundError(f'The luks secret key was not found at path: {path}')
+    with path.open() as f:
+        return f.read().strip()
+
+
 class BaseConfig(object):
     """Configuration items common across all config types"""
+    DEBUG = False
+    TESTING = False
     VERSION = __version__
     UPDATE_DATE = __update_date__
-    PORT = 5006
+    path = pathlib.Path()
+    PORT = 5005
     # Stuff for frontend
-    STATIC_DIR_PATH = '../build'
+    STATIC_DIR_PATH = '../static'
     TEMPLATE_DIR_PATH = '../templates'
 
-    HOME = Path().home()
+    HOME = path.home()
     KEY_DIR = HOME.joinpath('keys')
-    DATA_DIR = HOME.joinpath('data')
+    DATA_DIR = HOME.joinpath('data/grackle')
     LOG_DIR = HOME.joinpath('logs')
 
     BACKUP_DIR = DATA_DIR.joinpath('gnucash_backups')
     BACKUP_DIR.touch(exist_ok=True)
-    GNUCASH_PATH = DATA_DIR.joinpath('gnucash_sqlite.gnucash')
+    GNUCASH_PATH = DATA_DIR.joinpath('gnucash_ro.gnucash')
     GNUCASH_LAST_UPDATE = datetime.fromtimestamp(os.path.getmtime(GNUCASH_PATH))
 
     # backend
@@ -37,19 +48,27 @@ class BaseConfig(object):
     Base.metadata.bind = engine
     SESSION = sessionmaker(bind=engine)
     SECRET_KEY_PATH = KEY_DIR.joinpath('grackle-secret')
-    if not SECRET_KEY_PATH.exists():
-        raise FileNotFoundError(f'grackle-secret at {SECRET_KEY_PATH} not found...')
-    with SECRET_KEY_PATH.open() as f:
-        SECRET_KEY = f.read().strip()
+    SECRET_KEY = get_local_secret_key(SECRET_KEY_PATH)
 
 
 class DevelopmentConfig(BaseConfig):
     """Configuration for development environment"""
     DEBUG = True
+    DB_SERVER = 'localhost'
     LOG_LEVEL = 'DEBUG'
 
 
 class ProductionConfig(BaseConfig):
     """Configuration for production environment"""
     DEBUG = False
-    LOG_LEVEL = 'INFO'
+    DB_SERVER = '0.0.0.0'
+    LOG_LEVEL = 'DEBUG'
+
+
+class TestConfig(BaseConfig):
+    """Configuration for test environment"""
+    DEBUG = False
+    TESTING = True
+    WTF_CSRF_ENABLED = False
+    DB_SERVER = 'localhost'
+    LOG_LEVEL = 'DEBUG'

@@ -1,7 +1,16 @@
 /* main page */
 body {
     padding-bottom: 70px;
+    background-color: #2e2f35;
 }
+
+h2,
+body,
+.table-wrapper label,
+.table-wrapper div[role="status"] {
+    color: #acacac;
+}
+
 .nav-logo {
     width: 25px;
 }
@@ -14,6 +23,15 @@ body {
 footer .container {
     width: 100%;
     line-height: 60px;
+}
+
+.footer .navbar.fixed-bottom {
+    border-top: 1px double #acacac;
+    background-color: #2e2f35;
+}
+
+.text-muted {
+    color: #958D4A !important;
 }
 
 /*Compare form section*/
