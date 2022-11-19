@@ -6,14 +6,14 @@
 
 [Unit]
 Description=Personal Finance Webapp
-After=multi-user.target
+After=network.target
 
 [Service]
-User=pi
-Group=pi
-Type=idle
-ExecStart=/home/pi/venvs/grackle/bin/python3 /home/pi/extras/grackle/run.py -lvl debug
-WorkingDirectory=/home/pi/extras/grackle
+User=bobrock
+Group=bobrock
+WorkingDirectory=/home/bobrock/extras/grackle
+Environment="PATH=/home/bobrock/venvs/grackle/bin"
+ExecStart=/home/bobrock/venvs/grackle/bin/gunicorn --workers 2 --bind 127.0.0.1:5005 -m 007 wsgi:app --access-logfile '-' --error-logfile '-' --log-level 'debug'
 Restart=on-failure
 
 [Install]
