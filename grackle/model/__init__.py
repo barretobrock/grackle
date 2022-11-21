@@ -1,21 +1,21 @@
 from .base import Base
-from .accounts import (
+from .account import (
     TableAccount,
-    AccountClass,
+    AccountType,
     AccountCategory,
-    Currencies
+    Currency
 )
 from .budget import TableBudget
 from .invoice import (
     TableInvoice,
     TableInvoiceEntry
 )
-from .transactions import (
+from .transaction import (
     TableTransaction,
     TableTransactionSplit,
-    ReconciledStates
+    ReconciledState
 )
-from .scheduled_transactions import (
+from .scheduled_transaction import (
     ScheduleFrequencies,
     TableScheduledTransaction,
     TableScheduledTransactionSplit

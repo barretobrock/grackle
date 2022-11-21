@@ -9,6 +9,7 @@ from sqlalchemy.ext.declarative import declarative_base, declared_attr
 
 
 class Base:
+    @classmethod
     @declared_attr
     def __tablename__(cls):
         """Takes in a class name, sets the table name according to the class name, with some manipulation"""

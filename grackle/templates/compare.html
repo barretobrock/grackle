@@ -2,48 +2,61 @@
 
 {% block content %}
     <h2>{{ title }}</h2>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/table.css') }}">
     <div id="mvm-table" >
-        {% for name, df in [['expense', expense_df], ['income', income_df]] %}
-        <div>
-            <h3>{{ name.title() }}</h3>
+        {% for name, df in [['expense', expense_df], ['income', income_df], ['overall', overall_df]] %}
+        <div class="card">
+            <div class="card-header" id="heading-{{ name }}">
+                <h3 class="mb-0">
+                    <button class="btn btn-link" data-toggle="collapse" data-target="#collapse-{{ name }}" aria-expanded="true" aria-controls="collapse-{{ name }}">
+                        {{ name.title() }}
+                    </button>
+                </h3>
+            </div>
+            <div id="collapse-{{ name }}" class="collapse show" aria-labelledby="heading-{{ name }}" data-parent="#mvm-table">
+                <div class="card-body">
+                    <table class="table table-sm table-bordered {{ name }}-table">
+                        <thead>
+                            <tr>
+                                {% for col in df.columns.tolist() %}
+                                    {% if col != 'class' %}
+                                        <th class="{{ "val-header" if not loop.first else "" }}">{{ col.title() }}</th>
+                                    {% endif %}
+                                {% endfor %}
+                            </tr>
+                        </thead>
+                        <tbody>
+                        {% for i, row in df.iterrows() %}
+                            <tr class={{ "total" if row['account'] in ['Total', 'P/L'] else '' }}>
+                                {% for k, v in row.items() %}
+                                    {% set class_names = [] %}
+                                    {% if v is number %}
+                                        {% if k == 'change' %}
+                                            {{ class_names.append( 'diff' ) if class_names.append( 'diff' ) }}
+                                        {% else %}
+                                            {{ class_names.append( 'val' ) if class_names.append( 'val' ) }}
+                                        {% endif %}
+                                        {% if -0.001 < v < 0.001 %}
+                                            {{ class_names.append( 'zero' ) if class_names.append( 'zero' ) }}
+                                        {% elif v > 0 %}
+                                            {{ class_names.append( 'pos' ) if class_names.append( 'pos' ) }}
+                                        {% elif v < 0 %}
+                                            {{ class_names.append( 'neg' ) if class_names.append( 'neg' ) }}
+                                        {% endif %}
+                                        <td class="{{ ' '.join(class_names) }}">{{ "{:,.2f}".format(v) }}</td>
+                                    {% else %}
+                                        <td>{{ v }}</td>
+                                    {% endif %}
+                                {% endfor %}
+                            </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+
         </div>
-        <table class="table table-bordered {{ name }}-table">
-            <thead>
-                <tr>
-                    {% for col in df.columns.tolist() %}
-                        {% if col != 'class' %}
-                            <th class="{{ "val-header" if not loop.first else "" }}">{{ col.title() }}</th>
-                        {% endif %}
-                    {% endfor %}
-                </tr>
-            </thead>
-            <tbody>
-            {% for i, row in df.iterrows() %}
-                <tr class={{ "total" if row['account'] == 'Total' else '' }}>
-                    {% for k, v in row.items() %}
-                        {% set class_names = [] %}
-                        {% if v is number %}
-                            {% if k == 'change' %}
-                                {{ class_names.append( 'diff' ) if class_names.append( 'diff' ) }}
-                            {% else %}
-                                {{ class_names.append( 'val' ) if class_names.append( 'val' ) }}
-                            {% endif %}
-                            {% if -0.001 < v < 0.001 %}
-                                {{ class_names.append( 'zero' ) if class_names.append( 'zero' ) }}
-                            {% elif v > 0 %}
-                                {{ class_names.append( 'pos' ) if class_names.append( 'pos' ) }}
-                            {% elif v < 0 %}
-                                {{ class_names.append( 'neg' ) if class_names.append( 'neg' ) }}
-                            {% endif %}
-                            <td class="{{ ' '.join(class_names) }}">{{ "{:,.2f}".format(v) }}</td>
-                        {% else %}
-                            <td>{{ v }}</td>
-                        {% endif %}
-                    {% endfor %}
-                </tr>
-            {% endfor %}
-            </tbody>
-        </table>
         {% endfor %}
     </div>
 {% endblock %}

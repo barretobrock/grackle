@@ -34,53 +34,9 @@ footer .container {
     color: #958D4A !important;
 }
 
-/*Compare form section*/
-form > div.mvm-section {
-    background-color: antiquewhite;
-    padding: 15px;
-    border: 1px dotted #acacac;
-}
-.mvm-submit {
-    float: right;
-    left: 15px;
-    position: relative;
-}
 
-/* Finance tables */
-.val.zero,
-.diff.zero {
-    color: #acacac;
-}
 
-table.expense-table td.diff.pos,
-table.income-table td.diff.neg{
-    color: red;
-}
-table.expense-table td.diff.neg,
-table.income-table td.diff.pos {
-    color: mediumseagreen;
-}
 
-table th.val-header,
-table td.val,
-table td.diff {
-    text-align: right;
-}
-table tr.total,
-.entries-table tfoot td {
-    font-weight: bold;
-}
-
-/* Invoice tables */
-.invoices-table {
-    width: auto;
-}
-.invoices-table tr.paid td:first-child {
-    color: #00af71;
-}
-.invoices-table tr.unpaid td:first-child {
-    color: #fd0923;
-}
 
 #invoice-title {
     font-size: 2em;

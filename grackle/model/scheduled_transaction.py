@@ -39,7 +39,7 @@ class TableScheduledTransactionSplit(Base):
     This stores a template of each split
     """
 
-    scheduled_split_id = Column(Integer, primary_key=True, autoincrement=True)
+    scheduled_transaction_split_id = Column(Integer, primary_key=True, autoincrement=True)
     scheduled_transaction_key = Column(Integer, ForeignKey('scheduled_transaction.scheduled_transaction_id'),
                                        nullable=False)
     scheduled_transaction = relationship('TableScheduledTransaction', back_populates='split_templates')

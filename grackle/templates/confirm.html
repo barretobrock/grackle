@@ -1,0 +1,22 @@
+{% extends 'base.html' %}
+
+{% block content %}
+    <div class="form-wrapper">
+        <link rel="stylesheet" href="{{ url_for('static', filename='css/form.css') }}">
+        <h2 class="title">Confirm Book Refresh</h2>
+        <form method="POST" action="{{ url_for('main.refresh_book') }}" class="confirm-form">
+            <fieldset class="form-field">
+                {{ form.confirm.label }}
+                {{ form.confirm }}
+                {% if form.confirm.errors %}
+                    <ul class="errors">
+                      {% for error in form.confirm.errors %}
+                        <li>{{ error }}</li>
+                      {% endfor %}
+                    </ul>
+                {% endif %}
+            </fieldset>
+            {{ form.submit }}
+        </form>
+    </div>
+{% endblock %}

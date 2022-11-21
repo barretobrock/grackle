@@ -7,7 +7,8 @@ from flask import (
     redirect,
     url_for,
 )
-# from grackle.core.gnucash import GNUCashProcessor
+from grackle.forms import ConfirmRefreshForm
+from grackle.core.gnucash import GNUCashProcessor
 from grackle.config import BaseConfig
 
 main = Blueprint('main', __name__)
@@ -47,16 +48,19 @@ def upload_file():
     return render_template('index.html')
 
 
-@main.route('/refresh')
+@main.route('/refresh', methods=['GET', 'POST'])
 def refresh_book():
     # TODO Optionally tie this in with the upload endpoint and have separate endpoints to
     #  refresh specific parts if not all are needed (transactions, invoices, etc)
-    # gnc = GNUCashProcessor()
-    try:
-        # gnc.refresh_book()
-        # gnc.etl_accounts_transactions_budget()
-        # gnc.etl_invoices()
-        flash('Financial data refresh successful.', 'alert alert-success')
-    except Exception as e:
-        flash(f'Error! - {e}', 'alert alert-danger')
-    return redirect(url_for('main.index'))
+    if request.method == 'POST':
+        gnc = GNUCashProcessor(current_app.extensions['loguru'])
+        try:
+            gnc.entire_etl_process()
+            flash('Financial data refresh successful.', 'alert alert-success')
+        except Exception as e:
+            flash(f'Error! - {e}', 'alert alert-danger')
+        return redirect(url_for('main.index'))
+    else:
+        form = ConfirmRefreshForm()
+        return render_template('confirm.html', form=form, template='form-template')
+

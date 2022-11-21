@@ -2,6 +2,7 @@
 
 {% block content %}
     <h2>Most Recent Invoices</h2>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/table.css') }}">
     <div id="invoice-list">
         <table class="table table-bordered invoices-table">
             <thead>
@@ -12,6 +13,7 @@
                     <th>Status</th>
                     <th>Total</th>
                     <th>Date Paid</th>
+                    <th>Notes</th>
                 </tr>
             </thead>
         {% for invoice in invoices %}
@@ -28,7 +30,7 @@
                         <span class="badge badge-warning">{{ 'WIP' }}</span>
                     {% endif %}
                 </td>
-                <td class="invoice-total">{{ '{:,.2f}'.format(invoice.total) }}</td>
+                <td class="invoice-total">{{ '{:,.2f}'.format(23.2398) }}</td>
                 <td>{{ invoice.paid_date.strftime('%Y-%m-%d') if invoice.is_paid else ''}}</td>
                 <td>{{ invoice.notes if invoice.notes is not none else '' }}</td>
             </tr>
