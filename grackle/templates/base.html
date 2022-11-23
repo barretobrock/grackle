@@ -2,6 +2,7 @@
 <html lang="en">
   <head>
     <!-- Required meta tags -->
+    {% block head %}
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
     <link rel="shortcut icon" href="{{ url_for('static', filename='images/favicon.svg') }}" type="image/png">
@@ -17,6 +18,7 @@
     <script type="text/javascript">
         window.setTimeout("for (const elem of document.getElementsByClassName('alert')) {elem.style.display = 'none';}", 2000);
     </script>
+    {% endblock %}
     <!-- FontAwesome -->
     <script src="https://use.fontawesome.com/9b3bd4052a.js"></script>
     {% if title %}
@@ -36,11 +38,11 @@
         <div class="collapse navbar-collapse" id="navbarNav">
             <ul class="navbar-nav mr-auto">
                 {% set nav_dict = [
-                    ('charts.overview', 'Overview'),
-                    ('finances.get_invoices', 'Invoices'),
+                    ('chart.overview', 'Overview'),
+                    ('invoice.get_invoices', 'Invoices'),
                     ('finances.select_mvb', 'MvB'),
                     ('finances.select_mvm', 'MvM'),
-                    ('charts.budget_analysis', 'Budget')
+                    ('chart.budget_analysis', 'Budget')
                 ] -%}
 
                 {% for id, caption in nav_dict %}
@@ -69,7 +71,6 @@
     </div>
   </body>
   <footer class="footer">
-      <div class="navbar fixed-bottom">
-      </div>
+      <div class="navbar fixed-bottom"></div>
   </footer>
 </html>

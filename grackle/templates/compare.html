@@ -5,7 +5,7 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/table.css') }}">
     <div id="mvm-table" >
         {% for name, df in [['expense', expense_df], ['income', income_df], ['overall', overall_df]] %}
-        <div class="card">
+        <div class="card text-white bg-dark mb-0">
             <div class="card-header" id="heading-{{ name }}">
                 <h3 class="mb-0">
                     <button class="btn btn-link" data-toggle="collapse" data-target="#collapse-{{ name }}" aria-expanded="true" aria-controls="collapse-{{ name }}">
@@ -39,9 +39,18 @@
                                         {% if -0.001 < v < 0.001 %}
                                             {{ class_names.append( 'zero' ) if class_names.append( 'zero' ) }}
                                         {% elif v > 0 %}
-                                            {{ class_names.append( 'pos' ) if class_names.append( 'pos' ) }}
+                                            {# Actual greater than budget == bad #}
+                                            {% if row['type'] in ['expense'] %}
+                                                {{ class_names.append( 'neg' ) if class_names.append( 'neg' ) }}
+                                            {% else %}
+                                                {{ class_names.append( 'pos' ) if class_names.append( 'pos' ) }}
+                                            {% endif %}
                                         {% elif v < 0 %}
-                                            {{ class_names.append( 'neg' ) if class_names.append( 'neg' ) }}
+                                            {% if row['type'] in ['expense'] %}
+                                                {{ class_names.append( 'pos' ) if class_names.append( 'pos' ) }}
+                                            {% else %}
+                                                {{ class_names.append( 'neg' ) if class_names.append( 'neg' ) }}
+                                            {% endif %}
                                         {% endif %}
                                         <td class="{{ ' '.join(class_names) }}">{{ "{:,.2f}".format(v) }}</td>
                                     {% else %}

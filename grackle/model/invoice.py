@@ -41,7 +41,9 @@ class TableInvoice(Base):
 
     @hybrid_property
     def total(self) -> float:
-        return self.entries.count()
+        if self.entries.count() == 0:
+            return 0
+        return sum([x.total for x in self.entries])
 
     @total.expression
     def total(cls):

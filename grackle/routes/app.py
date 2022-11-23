@@ -3,11 +3,22 @@ from pukr import get_logger, InterceptHandler
 from grackle.config import ProductionConfig
 from grackle.flask_base import db
 from grackle.routes.account import account
+from grackle.routes.invoices import invc
 from grackle.routes.main import main
 from grackle.routes.chart import chart
 from grackle.routes.finances import fin
 from grackle.routes.transaction import transaction
 from grackle.routes.scheduled_transaction import sched_transaction
+
+ROUTES = [
+    account,
+    chart,
+    fin,
+    invc,
+    main,
+    sched_transaction,
+    transaction
+]
 
 
 def create_app(*args, **kwargs) -> Flask:
@@ -27,7 +38,7 @@ def create_app(*args, **kwargs) -> Flask:
     app.extensions.setdefault('loguru', logger)
 
     # Register routes
-    for rt in [account, chart, fin, main, sched_transaction, transaction]:
+    for rt in ROUTES:
         app.register_blueprint(rt)
 
     app.config['db'] = db

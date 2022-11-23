@@ -1,3 +1,13 @@
+/* Copy / CSV buttons on datatables */
+.dataTables_wrapper {
+    position: relative;
+}
+div.dt-buttons{
+    position: absolute;
+    right: 0px;
+    top: -50px;
+}
+
 /* Finance tables */
 .val.zero,
 .diff.zero {
@@ -18,18 +28,33 @@ table td.val,
 table td.diff {
     text-align: right;
 }
+
 table tr.total,
-.entries-table tfoot td {
+.entries-table tfoot tr td {
     font-weight: bold;
 }
 
-/* Invoice tables */
-.invoices-table {
-    width: auto;
+/* Invoices table */
+#current-balance-tbl {
+    width: 200px;
 }
-.invoices-table tr.paid td:first-child {
+#current-balance-tbl td:nth-child(2) {
+    text-align: right;
+}
+
+#invoices-tbl tr.paid td:first-child {
     color: #00af71;
 }
-.invoices-table tr.unpaid td:first-child {
+#invoices-tbl tr.unpaid td:first-child {
     color: #fd0923;
+}
+#invoices-tbl tr td:first-child,
+#invoices-tbl tr td:nth-child(2),
+#invoices-tbl tr td:nth-child(4) {
+    text-align: center;
+}
+
+/* Invoice entries table */
+#invoice-tbl tfoot tr td {
+    font-weight: bold;
 }

@@ -149,7 +149,8 @@ class GNUCashProcessor:
                 account_category=acc_cat,
                 account_currency=acc_cur,
                 guid=acc.guid,
-                is_hidden=acc.hidden
+                is_hidden=acc.hidden,
+                current_balance=float(acc.get_balance(at_date=datetime.today().date()))
             )
             if len(acc.budget_amounts) > 0:
                 for bdg in acc.budget_amounts:

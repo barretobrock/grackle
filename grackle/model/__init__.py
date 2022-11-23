@@ -1,9 +1,8 @@
 from .base import Base
 from .account import (
-    TableAccount,
-    AccountType,
     AccountCategory,
-    Currency
+    Currency,
+    TableAccount
 )
 from .budget import TableBudget
 from .invoice import (

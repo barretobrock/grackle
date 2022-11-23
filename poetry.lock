@@ -231,7 +231,7 @@ i18n = ["Babel (>=2.7)"]
 
 [[package]]
 name = "kavalkilu"
-version = "2.0.2"
+version = "2.0.3"
 description = "A library for integrating some common home automation components"
 category = "main"
 optional = false
@@ -255,7 +255,7 @@ test = []
 type = "git"
 url = "https://github.com/barretobrock/kavalkilu.git"
 reference = "master"
-resolved_reference = "c5687f220abe82339addd69cdfde11a85334b3db"
+resolved_reference = "8896cd30e01954a0029e75eeb6ff6857cab65d36"
 
 [[package]]
 name = "loguru"

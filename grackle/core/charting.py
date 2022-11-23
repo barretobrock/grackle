@@ -1,18 +1,11 @@
 import re
 from datetime import datetime
 from colorsys import rgb_to_hls, hls_to_rgb
-from typing import Union, List, Tuple
+from typing import List, Tuple
 import pandas as pd
-from sqlalchemy.sql import and_
 import plotly.graph_objs as go
-from grackle.model import (
-    TableAccount,
-    TableTransaction,
-    TableTransactionSplit,
-    AccountClass,
-    Currencies
-)
-import app as grapp
+
+from grackle.model import TableTransactionSplit
 
 
 class ChartPrep:
@@ -68,35 +61,19 @@ class ChartPrep:
         return df.loc[date_mask]
 
     @staticmethod
-    def get_balances(account_full_name: Union[str, List[str]] = None,
-                     friendly_name: Union[str, List[str]] = None, split_future: bool = False) -> pd.DataFrame:
+    def get_balances(transactions: List[TableTransactionSplit], split_future: bool = False) -> pd.DataFrame:
         """Retrieves an account's daily balance
-        Args:
-            account_full_name: the full name of the accounts
-            friendly_name: the name of the accounts, often without overly repetitive prefixes
-            split_future: if True, will split balances on or after today into a separate column
-                for better distinction
         """
-        if account_full_name is not None:
-            if isinstance(account_full_name, str):
-                account_full_name = [account_full_name]
-            filter_cond = TableAccount.fullname.in_(account_full_name)
-        elif friendly_name is not None:
-            if isinstance(friendly_name, str):
-                friendly_name = [friendly_name]
-            filter_cond = TableAccount.friendly_name.in_(friendly_name)
-        else:
-            raise ValueError('account_full_name or friendly_name must not be NoneType!')
-        transactions = grapp.db.session.query(TableTransactionSplit).join(
-            TableTransactionSplit.account, aliased=True).filter(filter_cond).all()
+
         df = pd.DataFrame()
+        t: TableTransactionSplit
         for t in transactions:
-            df = df.append({
-                'name': t.account.friendly_name,
-                'fullname': t.account.fullname,
-                'date': t.transaction_date,
+            df = pd.concat([df, pd.DataFrame({
+                'name': t.account.name,
+                'fullname': t.account.full_name,
+                'date': t.transaction.transaction_date,
                 'value': t.amount
-            }, ignore_index=True)
+            }, index=[0])], ignore_index=True)
         # Group by date, summing the values
         result_df = df.groupby(['fullname', 'name', 'date'], as_index=False).agg({'value': 'sum'}) \
             .sort_values(['fullname', 'name', 'date'], ascending=True)
@@ -158,31 +135,22 @@ class ChartPrep:
         return fig
 
     @classmethod
-    def get_monthly_activity(cls, acct_filter: str, acct_class: AccountClass = AccountClass.EXPENSE,
-                             acct_cur: Currencies = Currencies.USD, start_date: datetime = None) -> pd.DataFrame:
+    def get_monthly_activity(cls, transactions: List, acct_filter: str = None) -> pd.DataFrame:
         """Gets all transactions for budget analysis"""
-        if start_date is None:
-            start_date = datetime(2020, 1, 1)
         if acct_filter is None:
             acct_filter = r'.*'
-        transactions = grapp.db.session.query(TableTransactionSplit).join(
-            TableTransactionSplit.account, aliased=True).filter(and_(
-                TableAccount.account_currency == acct_cur,
-                TableAccount.account_class == acct_class,
-                TableTransaction.transaction_date >= start_date
-            )).all()
         df = pd.DataFrame()
         for row in transactions:
-            if re.match(acct_filter, row.account.friendly_name) is None:
+            if re.match(acct_filter, row.account.full_name) is None:
                 continue
             # Load data into dataframe
-            df = df.append(pd.DataFrame({
-                'date': row.transaction_date,
-                'class': row.account.account_class.name,
-                'account': row.account.friendly_name,
+            df = pd.concat([df, pd.DataFrame({
+                'date': row.transaction.transaction_date,
+                'type': row.account.account_type.name,
+                'account': row.account.name,
                 'amt': row.amount,
                 'cur': row.account.account_currency.name,
-            }, index=[0]))
+            }, index=[0])], ignore_index=True)
         # Group by month, year
         df = df.set_index('date')
         grouped = df.groupby([pd.Grouper(freq='M'), 'cur', 'account']).sum().reset_index()

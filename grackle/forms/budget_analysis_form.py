@@ -1,12 +1,21 @@
+from datetime import datetime, timedelta
+
 from flask_wtf import FlaskForm
-from wtforms import StringField, SubmitField
+from wtforms import StringField, SubmitField, DateField
 from wtforms.validators import DataRequired
 
 
 class BudgetAnalysisForm(FlaskForm):
     """Budget analysis form"""
-    account_regex = StringField(
-        'Account Filter',
-        [DataRequired()]
+    start_date = DateField(
+        label='Start Date',
+        validators=[DataRequired()],
+        default=(datetime.today().replace(day=1) - timedelta(days=3)).replace(day=1)
     )
+    account_regex = StringField(
+        label='Account Filter',
+        validators=[DataRequired()],
+        default='.*'
+    )
+
     submit = SubmitField('Submit')

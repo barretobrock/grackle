@@ -1,10 +1,50 @@
 {% extends 'base.html' %}
-
-{% block content %}
-    <h2>Most Recent Invoices</h2>
+{% block head %}
+    {{ super() }}
+    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/v/bs5/dt-1.13.1/b-2.3.3/b-html5-2.3.3/datatables.min.css"/>
+ 
+    <script type="text/javascript" src="https://cdn.datatables.net/v/bs5/dt-1.13.1/b-2.3.3/b-html5-2.3.3/datatables.min.js"></script>
+    <script>
+        {% set col, direction = order_list %}
+        let tbl_id_name = '#{{ tbl_id_name }}';
+        let direction = 'asc'
+        $(document).ready(function () {
+            $(tbl_id_name).DataTable({
+                dom: 'Bfrtip',
+                paging: false,
+                searching: false,
+                order: [[{{ col }}, '{{ direction }}']],
+                buttons: [
+                    'copy',
+                    'csv'
+                ]
+            });
+        });
+    </script>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/table.css') }}">
+{% endblock %}
+{% block content %}
+    <h2>Uninvoiced Balances</h2>
+    <div>
+        <div>These are the current balances (positive = owed) as of {{ update_date }} </div>
+        <table class="table table-sm table-bordered table-dark" id="current-balance-tbl">
+            <thead>
+                <tr><th>Account</th><th>Balance</th></tr>
+            </thead>
+            <tbody>
+                {% for name, bal in acct_balances %}
+                    <tr>
+                        <td class="acct-name">{{ name.split('-')[1] }}</td>
+                        <td class="acct-bal">{{ '{:.2f}'.format(bal) }}</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+    </div>
+    <h2>Most Recent Invoices</h2>
     <div id="invoice-list">
-        <table class="table table-bordered invoices-table">
+        <table class="table table-sm table-bordered table-striped table-dark" id="{{ tbl_id_name }}">
             <thead>
                 <tr>
                     <th class="paid-col">Paid?</th>
@@ -18,8 +58,8 @@
             </thead>
         {% for invoice in invoices %}
             <tr class="{{ 'paid' if invoice.is_paid else 'unpaid' }}">
-                <td class="fa {{ 'fa-check' if invoice.is_paid else 'fa-times' }}"></td>
-                <td><a class="badge badge-primary" href="/invoice/{{ invoice.invoice_no }}">{{ invoice.invoice_no }}</a></td>
+                <td><i class="fa {{ 'fa-check' if invoice.is_paid else 'fa-times' }}"></i></td>
+                <td><a class="badge badge-primary" href="{{ url_for('invoice.get_invoice', invoice_no=invoice.invoice_no) }}">{{ invoice.invoice_no }}</a></td>
                 <td>{{ invoice.created_date.strftime('%Y-%m-%d') }}</td>
                 <td>
                     {% if invoice.is_paid %}
@@ -30,7 +70,7 @@
                         <span class="badge badge-warning">{{ 'WIP' }}</span>
                     {% endif %}
                 </td>
-                <td class="invoice-total">{{ '{:,.2f}'.format(23.2398) }}</td>
+                <td class="invoice-total">{{ '{:,.2f}'.format(invoice.total) }}</td>
                 <td>{{ invoice.paid_date.strftime('%Y-%m-%d') if invoice.is_paid else ''}}</td>
                 <td>{{ invoice.notes if invoice.notes is not none else '' }}</td>
             </tr>

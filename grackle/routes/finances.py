@@ -12,11 +12,8 @@ from flask import (
 )
 from sqlalchemy.sql import and_
 from grackle.model import (
-    TableAccount,
     TableTransaction,
     TableTransactionSplit,
-    AccountType,
-    TableInvoice,
     TableBudget
 )
 
@@ -95,7 +92,7 @@ def get_mvm(p1: str, p2: str):
     pivoted = df.pivot_table(index=['type', 'category', 'account'], columns=['period'],
                              values='amt', aggfunc='sum').fillna(0).reset_index()
     # Remove bank, receivable & credit activity
-    pivoted = pivoted.loc[~pivoted['type'].isin(['bank', 'credit', 'receivable']), :]
+    pivoted = pivoted.loc[~pivoted['type'].isin(['bank', 'equity', 'credit', 'receivable']), :]
     # Income, liability needs to be 'flipped'
     pivoted.loc[pivoted['type'].isin(['income', 'liability']), [p1, p2]] = \
         pivoted.loc[pivoted['type'].isin(['income', 'liability']), [p1, p2]] * -1
@@ -161,7 +158,7 @@ def get_mvb(period: str):
     pivoted = df.pivot_table(index=['type', 'category', 'account'], columns=['period'],
                              values='amt', aggfunc='sum').fillna(0).reset_index()
     # Remove bank, receivable & credit activity
-    pivoted = pivoted.loc[~pivoted['type'].isin(['bank', 'credit', 'receivable']), :]
+    pivoted = pivoted.loc[~pivoted['type'].isin(['bank', 'equity', 'credit', 'receivable']), :]
     # Income, liability needs to be 'flipped'
     pivoted.loc[pivoted['type'].isin(['income', 'liability']), 'actual'] = \
         pivoted.loc[pivoted['type'].isin(['income', 'liability']), 'actual'] * -1
@@ -194,19 +191,3 @@ def get_mvb(period: str):
         expense_df=expense_df,
         overall_df=overall_df
     )
-
-
-@fin.route('/invoices')
-def get_invoices():
-    """For rendering a list of invoices, marking which ones might be due"""
-    # Query all invoices
-    invoices = get_db().session.query(TableInvoice).order_by(TableInvoice.invoice_no.desc()).limit(10).all()
-
-    return render_template('invoices.html', invoices=invoices)
-
-
-@fin.route('/invoice/<string:invoice_no>')
-def get_invoice(invoice_no: str):
-    """For rendering an individual invoice"""
-    invoice = get_db().session.query(TableInvoice).filter(TableInvoice.invoice_no == invoice_no).one_or_none()
-    return render_template('invoice.html', invoice=invoice)
