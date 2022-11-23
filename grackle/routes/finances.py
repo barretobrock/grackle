@@ -1,22 +1,26 @@
-import re
-from datetime import datetime, timedelta
-from typing import List
-import pandas as pd
-from flask import (
-    render_template,
-    current_app,
-    Blueprint,
-    redirect,
-    url_for,
-    request
+from datetime import (
+    datetime,
+    timedelta,
 )
+import re
+from typing import List
+
+from flask import (
+    Blueprint,
+    current_app,
+    redirect,
+    render_template,
+    request,
+    url_for,
+)
+import pandas as pd
 from sqlalchemy.sql import and_
+
 from grackle.model import (
+    TableBudget,
     TableTransaction,
     TableTransactionSplit,
-    TableBudget
 )
-
 
 fin = Blueprint('finances', __name__)
 
@@ -129,8 +133,8 @@ def get_mvm(p1: str, p2: str):
 def select_mvb():
     """Page to select month to compare with budget"""
     if request.method == 'POST':
-        yyyy = request.values.get(f'pd-year')
-        mm = request.values.get(f'pd-month')
+        yyyy = request.values.get('pd-year')
+        mm = request.values.get('pd-month')
         period = f'{int(mm):02d}-{yyyy}'
         return redirect(url_for('finances.get_mvb', period=period))
     else:

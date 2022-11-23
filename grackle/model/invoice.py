@@ -1,17 +1,22 @@
 from datetime import datetime
+
 from sqlalchemy import (
-    Column,
-    Integer,
-    ForeignKey,
-    VARCHAR,
-    Float,
     TIMESTAMP,
+    VARCHAR,
     Boolean,
-    Text
+    Column,
+    Float,
+    ForeignKey,
+    Integer,
+    Text,
 )
+from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import relationship
-from sqlalchemy.ext.hybrid import hybrid_property, hybrid_method
-from sqlalchemy.sql import select, func
+from sqlalchemy.sql import (
+    func,
+    select,
+)
+
 from .base import Base
 
 

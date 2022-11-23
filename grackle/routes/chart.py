@@ -1,23 +1,28 @@
 from datetime import datetime
 import json
-from flask import (
-    render_template,
-    Blueprint,
-    current_app
+from typing import (
+    List,
+    Union,
 )
-from typing import Tuple, Union, List
+
+from flask import (
+    Blueprint,
+    current_app,
+    render_template,
+)
+from piecash import AccountType
 import plotly
 import plotly.graph_objs as go
+from sqlalchemy.sql import and_
+
 from grackle.core.charting import ChartPrep
 from grackle.forms.budget_analysis_form import BudgetAnalysisForm
 from grackle.model import (
-    AccountType,
     AccountCategory,
     TableAccount,
+    TableTransaction,
     TableTransactionSplit,
-    TableTransaction
 )
-from sqlalchemy.sql import and_
 
 chart = Blueprint('chart', __name__, url_prefix='/chart')
 
@@ -93,7 +98,7 @@ def show_balances(account_full_name: Union[str, List[str]] = None,
         filter_cond = TableAccount.friendly_name.in_(friendly_name)
     else:
         raise ValueError('account_full_name or friendly_name must not be NoneType!')
-    transactions = get_db().session.query(TableTransactionSplit).join(
+    _ = get_db().session.query(TableTransactionSplit).join(
         TableTransactionSplit.account, aliased=True).filter(filter_cond).all()
 
 

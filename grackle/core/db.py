@@ -1,5 +1,10 @@
 from typing import List
-from pukr import get_logger, PukrLog
+
+from pukr import (
+    PukrLog,
+    get_logger,
+)
+
 from grackle.config import DevelopmentConfig
 from grackle.model import (
     Base,

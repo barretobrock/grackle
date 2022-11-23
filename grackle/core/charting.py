@@ -1,7 +1,14 @@
-import re
+from colorsys import (
+    hls_to_rgb,
+    rgb_to_hls,
+)
 from datetime import datetime
-from colorsys import rgb_to_hls, hls_to_rgb
-from typing import List, Tuple
+import re
+from typing import (
+    List,
+    Tuple,
+)
+
 import pandas as pd
 import plotly.graph_objs as go
 
@@ -45,11 +52,11 @@ class ChartPrep:
         else:
             factor = 1 - factor
 
-        r, g, b = (x / 255.0 for x in orig_rgb)
-        h, l, s = rgb_to_hls(r / 255.0, g / 255.0, b / 255.0)
-        l = max(min(l * factor, 1.0), 0.0)
-        r, g, b = (x * 255 for x in hls_to_rgb(h, l, s))
-        return r, g, b
+        red, grn, blu = (x / 255.0 for x in orig_rgb)
+        hue, lit, sat = rgb_to_hls(red / 255.0, grn / 255.0, blu / 255.0)
+        lit = max(min(lit * factor, 1.0), 0.0)
+        red, grn, blu = (x * 255 for x in hls_to_rgb(hue, lit, sat))
+        return red, grn, blu
 
     @staticmethod
     def filter_dates(df: pd.DataFrame, start: datetime, end: datetime = None) -> pd.DataFrame:

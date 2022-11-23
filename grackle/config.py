@@ -1,10 +1,15 @@
 """Configuration setup"""
+from datetime import datetime
 import os
 import pathlib
-from datetime import datetime
+
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-from grackle import __version__, __update_date__
+
+from grackle import (
+    __update_date__,
+    __version__,
+)
 from grackle.model import Base
 
 

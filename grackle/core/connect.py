@@ -1,7 +1,8 @@
 import os
-from typing import Tuple
-from kavalkilu import Keys
 import tempfile
+from typing import Tuple
+
+from kavalkilu import Keys
 from smb.SMBConnection import SMBConnection
 
 

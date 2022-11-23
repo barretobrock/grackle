@@ -1,17 +1,19 @@
 from datetime import datetime
 import enum
+
 from sqlalchemy import (
-    Column,
-    Integer,
-    ForeignKey,
-    Boolean,
-    Text,
-    VARCHAR,
-    Float,
     TIMESTAMP,
-    Enum
+    VARCHAR,
+    Boolean,
+    Column,
+    Enum,
+    Float,
+    ForeignKey,
+    Integer,
+    Text,
 )
 from sqlalchemy.orm import relationship
+
 from .base import Base
 
 

@@ -1,7 +1,14 @@
-from datetime import datetime, timedelta
+from datetime import (
+    datetime,
+    timedelta,
+)
 
 from flask_wtf import FlaskForm
-from wtforms import StringField, SubmitField, DateField
+from wtforms import (
+    DateField,
+    StringField,
+    SubmitField,
+)
 from wtforms.validators import DataRequired
 
 

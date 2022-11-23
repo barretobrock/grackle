@@ -1,16 +1,20 @@
 from flask import (
-    render_template,
     Blueprint,
-    request,
     current_app,
     flash,
     redirect,
+    render_template,
+    request,
     url_for,
 )
-from grackle.forms import ConfirmRefreshForm
-from grackle.core.connect import connect_to_smb, get_files
-from grackle.core.gnucash import GNUCashProcessor
+
 from grackle.config import BaseConfig
+from grackle.core.connect import (
+    connect_to_smb,
+    get_files,
+)
+from grackle.core.gnucash import GNUCashProcessor
+from grackle.forms import ConfirmRefreshForm
 
 main = Blueprint('main', __name__)
 
@@ -67,4 +71,3 @@ def refresh_book():
     else:
         form = ConfirmRefreshForm()
         return render_template('confirm.html', form=form, template='form-template')
-

@@ -1,14 +1,16 @@
 import enum
+
+from piecash import AccountType
 from sqlalchemy import (
+    VARCHAR,
+    Boolean,
     Column,
+    Enum,
     Float,
     Integer,
-    VARCHAR,
-    Enum,
-    Boolean
 )
-from piecash import AccountType
 from sqlalchemy.orm import relationship
+
 from .base import Base
 
 

@@ -1,7 +1,7 @@
 from flask_wtf import FlaskForm
 from wtforms import (
     BooleanField,
-    SubmitField
+    SubmitField,
 )
 from wtforms.validators import DataRequired
 

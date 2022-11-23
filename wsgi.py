@@ -1,7 +1,7 @@
 from pukr import get_logger
 
-from grackle.routes.app import create_app
 from grackle.config import ProductionConfig
+from grackle.routes.app import create_app
 
 app = create_app(config_class=ProductionConfig)
 

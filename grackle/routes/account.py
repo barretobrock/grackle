@@ -1,15 +1,14 @@
 from flask import (
-    Response,
     Blueprint,
-    request,
-    make_response,
+    Response,
     current_app,
-    jsonify
+    jsonify,
 )
+
 from grackle.model import (
     TableAccount,
     TableTransaction,
-    TableTransactionSplit
+    TableTransactionSplit,
 )
 
 account = Blueprint('account', __name__)
@@ -28,46 +27,6 @@ def get_accounts() -> Response:
     ]
 
     return jsonify({'accounts': names})
-
-
-@account.route('/api/account/new', methods=['POST'])
-def account_new() -> Response:
-    """Take in a new transaction, parse info into splits and write to db"""
-    data = request.get_json()
-    # TODO: parse the transaction description, date, splits, etc into items to feed into the
-
-    return make_response('', 200)
-
-
-@account.route('/api/account/edit/<int:account_id>', methods=['POST'])
-def account_edit(account_id: int) -> Response:
-    """Take in a new transaction, parse info into splits and write to db"""
-    # Get the transaction
-    transaction = get_db().session.query(TableAccount).filter(
-        TableAccount.account_id == account_id).one_or_none()
-    if transaction is None:
-        # TODO: Not found error response
-        return make_response('', 404)
-    data = request.get_json()
-
-    # TODO: parse the transaction description, date, splits, etc into items to feed into the
-
-    return make_response('', 200)
-
-
-@account.route('/api/account/delete/<int:account_id>', methods=['POST'])
-def account_delete(account_id: int) -> Response:
-    """Take in a new transaction, parse info into splits and write to db"""
-    # data = request.get_json()
-    # # TODO: get a confirmation code generated from react to ensure this wasn't done in error
-    # # Get the transaction
-    # transaction = db.session.query(TableAccount).filter(
-    #     TableAccount.account_id == account_id).one_or_none()
-    # if transaction is None:
-    #     # TODO: Not found error response
-    #     return make_response('', 404)
-
-    return make_response('', 200)
 
 
 # ---- VIEWS
@@ -99,9 +58,3 @@ def account_transactions(account_id: int) -> Response:
         })
 
     return jsonify({'splits': account_splits})
-
-
-@account.route('/api/account/reconcile/<int:account_id>', methods=['GET'])
-def account_reconciliation(account_id: int) -> Response:
-    """"""
-    return make_response('', 200)

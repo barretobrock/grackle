@@ -1,40 +1,42 @@
+from datetime import datetime
+import functools
 import os
 import re
-import functools
 from shutil import copyfile
-from datetime import datetime
-from typing import (
-    List,
-    Dict,
-    Union,
-    Optional
-)
-from sqlalchemy.orm import Session
-from pukr import get_logger, PukrLog
-import piecash
-from piecash.core.book import (
-    Book,
-    Account,
-    Split
+from typing import Optional
+
+from piecash import (
+    AccountType,
+    open_book,
 )
 from piecash.business.invoice import (
     Entry,
-    Invoice
+    Invoice,
 )
+from piecash.core.book import (
+    Account,
+    Book,
+    Split,
+)
+from pukr import (
+    PukrLog,
+    get_logger,
+)
+from sqlalchemy.orm import Session
+
+from grackle.config import BaseConfig
+from grackle.core.db import DBAdmin
 from grackle.model import (
+    AccountCategory,
+    Currency,
+    ReconciledState,
     TableAccount,
     TableBudget,
     TableInvoice,
     TableInvoiceEntry,
     TableTransaction,
     TableTransactionSplit,
-    Currency,
-    ReconciledState,
-    AccountType,
-    AccountCategory
 )
-from grackle.config import BaseConfig
-from grackle.core.db import DBAdmin
 
 
 class GNUCashProcessor:
@@ -58,8 +60,8 @@ class GNUCashProcessor:
             os.path.getmtime(BaseConfig.GNUCASH_PATH))   # type: Optional[datetime]
 
     def refresh_book(self):
-        self.book = piecash.open_book(BaseConfig.GNUCASH_PATH, readonly=True,
-                                      open_if_lock=True,)
+        self.book = open_book(BaseConfig.GNUCASH_PATH, readonly=True,
+                              open_if_lock=True,)
         self.session = BaseConfig.SESSION()
         self.book_last_updated = datetime.fromtimestamp(os.path.getmtime(BaseConfig.GNUCASH_PATH))
 
@@ -67,8 +69,9 @@ class GNUCashProcessor:
         if os.path.exists(fpath):
             # Attempt to open the file
             try:
-                b = piecash.open_book(fpath, readonly=True, open_if_lock=True)
-            except Exception as e:
+                _ = open_book(fpath, readonly=True, open_if_lock=True)
+            except Exception as exp:
+                self.log.exception(exp)
                 # Failed to open... don't overwrite this book with the default
                 return False
             # Copy existing file to backups, append timestamp to end of file name

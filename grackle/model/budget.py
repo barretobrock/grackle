@@ -1,11 +1,12 @@
 from sqlalchemy import (
-    Column,
-    Integer,
-    ForeignKey,
     VARCHAR,
-    Float
+    Column,
+    Float,
+    ForeignKey,
+    Integer,
 )
 from sqlalchemy.orm import relationship
+
 from .base import Base
 
 

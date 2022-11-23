@@ -1,15 +1,15 @@
 from flask import (
-    render_template,
-    current_app,
     Blueprint,
+    current_app,
+    render_template,
 )
 from sqlalchemy.sql import and_
+
 from grackle.model import (
     AccountType,
     TableAccount,
     TableInvoice,
 )
-
 
 invc = Blueprint('invoice', __name__, url_prefix='/invoice')
 

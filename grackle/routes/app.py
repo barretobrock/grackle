@@ -1,14 +1,18 @@
 from flask import Flask
-from pukr import get_logger, InterceptHandler
+from pukr import (
+    InterceptHandler,
+    get_logger,
+)
+
 from grackle.config import ProductionConfig
 from grackle.flask_base import db
 from grackle.routes.account import account
-from grackle.routes.invoices import invc
-from grackle.routes.main import main
 from grackle.routes.chart import chart
 from grackle.routes.finances import fin
-from grackle.routes.transaction import transaction
+from grackle.routes.invoices import invc
+from grackle.routes.main import main
 from grackle.routes.scheduled_transaction import sched_transaction
+from grackle.routes.transaction import transaction
 
 ROUTES = [
     account,
