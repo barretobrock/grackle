@@ -1,5 +1,6 @@
 from .account import (
     AccountCategory,
+    AccountType,
     Currency,
     TableAccount,
 )

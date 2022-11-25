@@ -14,24 +14,44 @@ div.dt-buttons{
     color: #acacac;
 }
 
-table.expense-table td.diff.pos,
-table.income-table td.diff.neg{
+table.expense-table td.diff.neg,
+table.income-table td.diff.neg,
+table.overall-table td.diff.neg {
     color: red;
 }
-table.expense-table td.diff.neg,
-table.income-table td.diff.pos {
+table.expense-table td.diff.pos,
+table.income-table td.diff.pos,
+table.overall-table td.diff.pos {
     color: mediumseagreen;
 }
 
 table th.val-header,
 table td.val,
-table td.diff {
+table td.diff,
+table td.invoice-total {
     text-align: right;
 }
 
 table tr.total,
 .entries-table tfoot tr td {
     font-weight: bold;
+}
+
+.subcat:before {
+    content: '....'
+}
+
+.subcat {
+    padding-left: calc(attr(data-level) * 40px) !important;
+}
+.subcat[data-level="1"] {
+     padding-left: calc(1 * 40px) !important;
+}
+.subcat[data-level="2"] {
+     padding-left: calc(2 * 40px) !important;
+}
+.subcat[data-level="3"] {
+     padding-left: calc(3 * 40px) !important;
 }
 
 /* Invoices table */
@@ -48,6 +68,7 @@ table tr.total,
 #invoices-tbl tr.unpaid td:first-child {
     color: #fd0923;
 }
+table td.center-date,
 #invoices-tbl tr td:first-child,
 #invoices-tbl tr td:nth-child(2),
 #invoices-tbl tr td:nth-child(4) {

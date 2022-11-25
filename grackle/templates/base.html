@@ -37,18 +37,37 @@
         </button>
         <div class="collapse navbar-collapse" id="navbarNav">
             <ul class="navbar-nav mr-auto">
-                {% set nav_dict = [
-                    ('chart.overview', 'Overview'),
-                    ('invoice.get_invoices', 'Invoices'),
-                    ('finances.select_mvb', 'MvB'),
-                    ('finances.select_mvm', 'MvM'),
-                    ('chart.budget_analysis', 'Budget')
-                ] -%}
+                {% set nav_dict = {
+                    'main': {
+                        'invoice.get_invoices': 'Invoices',
+                    },
+                    'analyses': {
+                        'finances.select_mvb': 'Month v. Budget',
+                        'finances.select_mvm': 'Month v. Month',
+                    },
+                    'charts': {
+                        'chart.overview': 'Cur.Acct Overview',
+                        'chart.budget_analysis': 'Budget',
+                    },
+                } -%}
 
-                {% for id, caption in nav_dict %}
-                    <li class="nav-item {{'active' if request.endpoint == id}}">
-                        <a class="nav-link" href="{{ url_for(id) }}">{{ caption }}</a>
-                    </li>
+                {% for section, sect_dict in nav_dict.items() %}
+                    {% if section == 'main' %}
+                        {% for pth, name in sect_dict.items() %}
+                            <li class="nav-item {{'active' if request.endpoint == pth}}">
+                                <a class="nav-link" href="{{ url_for(pth) }}">{{ name }}</a>
+                            </li>
+                        {% endfor %}
+                    {% else %}
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" data-toggle="dropdown" href="#" role="button" aria-haspopup="true" aria-expanded="false">{{ section.title() }}</a>
+                            <div class="dropdown-menu">
+                                {% for pth, name in sect_dict.items() %}
+                                    <a class="dropdown-item" href="{{ url_for(pth) }}">{{ name }}</a>
+                                {% endfor %}
+                            </div>
+                        </li>
+                    {% endif %}
                 {% endfor %}
             </ul>
             <!-- Navbar Right Side -->

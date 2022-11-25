@@ -18,43 +18,42 @@
                     <table class="table table-sm table-bordered {{ name }}-table">
                         <thead>
                             <tr>
-                                {% for col in df.columns.tolist() %}
-                                    {% if col != 'class' %}
-                                        <th class="{{ "val-header" if not loop.first else "" }}">{{ col.title() }}</th>
-                                    {% endif %}
+                                {% for col in headers %}
+                                    <th class="{{ "val-header" if not loop.first else "" }}">{{ col.title() }}</th>
                                 {% endfor %}
                             </tr>
                         </thead>
                         <tbody>
                         {% for i, row in df.iterrows() %}
                             <tr class={{ "total" if row['account'] in ['Total', 'P/L'] else '' }}>
+                                {% set lvl = row['level']|int - 1 %}
+                                <td class={{ "subcat" if lvl > 0 else "" }}  data-level={{ lvl }}>{{ row['account'] }}</td>
                                 {% for k, v in row.items() %}
                                     {% set class_names = [] %}
-                                    {% if v is number %}
+                                    {% if v is number and k != 'level' %}
+                                        {# Number columns #}
+                                        {{ class_names.append( 'val' ) if class_names.append( 'val' ) }}
                                         {% if k == 'change' %}
                                             {{ class_names.append( 'diff' ) if class_names.append( 'diff' ) }}
-                                        {% else %}
-                                            {{ class_names.append( 'val' ) if class_names.append( 'val' ) }}
+                                            {% if row['type'] == 'INCOME' %}
+                                                {% if v > 0 %}
+                                                    {{ class_names.append( 'pos' ) if class_names.append( 'pos' ) }}
+                                                {% elif v < 0 %}
+                                                    {{ class_names.append( 'neg' ) if class_names.append( 'neg' ) }}
+                                                {% endif %}
+                                            {% elif row['type'] == 'EXPENSE' %}
+                                                {% if v > 0 %}
+                                                    {{ class_names.append( 'neg' ) if class_names.append( 'neg' ) }}
+                                                {% elif v < 0 %}
+                                                    {{ class_names.append( 'pos' ) if class_names.append( 'pos' ) }}
+                                                {% endif %}
+                                            {% endif %}
                                         {% endif %}
+
                                         {% if -0.001 < v < 0.001 %}
                                             {{ class_names.append( 'zero' ) if class_names.append( 'zero' ) }}
-                                        {% elif v > 0 %}
-                                            {# Actual greater than budget == bad #}
-                                            {% if row['type'] in ['expense'] %}
-                                                {{ class_names.append( 'neg' ) if class_names.append( 'neg' ) }}
-                                            {% else %}
-                                                {{ class_names.append( 'pos' ) if class_names.append( 'pos' ) }}
-                                            {% endif %}
-                                        {% elif v < 0 %}
-                                            {% if row['type'] in ['expense'] %}
-                                                {{ class_names.append( 'pos' ) if class_names.append( 'pos' ) }}
-                                            {% else %}
-                                                {{ class_names.append( 'neg' ) if class_names.append( 'neg' ) }}
-                                            {% endif %}
                                         {% endif %}
                                         <td class="{{ ' '.join(class_names) }}">{{ "{:,.2f}".format(v) }}</td>
-                                    {% else %}
-                                        <td>{{ v }}</td>
                                     {% endif %}
                                 {% endfor %}
                             </tr>

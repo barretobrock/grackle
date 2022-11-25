@@ -1,6 +1,5 @@
 import enum
 
-from piecash import AccountType
 from sqlalchemy import (
     VARCHAR,
     Boolean,
@@ -12,6 +11,23 @@ from sqlalchemy import (
 from sqlalchemy.orm import relationship
 
 from .base import Base
+
+
+class AccountType(enum.Enum):
+    ROOT = enum.auto()
+    ASSET = enum.auto()
+    BANK = enum.auto()
+    CASH = enum.auto()
+    CREDIT = enum.auto()
+    EQUITY = enum.auto()
+    EXPENSE = enum.auto()
+    INCOME = enum.auto()
+    LIABILITY = enum.auto()
+    MUTUAL = enum.auto()
+    PAYABLE = enum.auto()
+    RECEIVABLE = enum.auto()
+    STOCK = enum.auto()
+    TRADING = enum.auto()
 
 
 class AccountCategory(enum.Enum):

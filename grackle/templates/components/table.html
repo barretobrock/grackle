@@ -1,0 +1,24 @@
+<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/v/bs5/dt-1.13.1/b-2.3.3/b-html5-2.3.3/datatables.min.css"/>
+ 
+<script type="text/javascript" src="https://cdn.datatables.net/v/bs5/dt-1.13.1/b-2.3.3/b-html5-2.3.3/datatables.min.js"></script>
+<script>
+    {% if not order_list %}
+        {% set order_list = [0, "asc"] %}
+    {% endif %}
+    {% set col, direction = order_list %}
+    let tbl_id_name = '#{{ tbl_id_name }}';
+    let direction = 'asc'
+    $(document).ready(function () {
+        $(tbl_id_name).DataTable({
+            dom: 'Bfrtip',
+            paging: false,
+            searching: false,
+            order: [[{{ col }}, '{{ direction }}']],
+            buttons: [
+                'copy',
+                'csv'
+            ]
+        });
+    });
+</script>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/table.css') }}">

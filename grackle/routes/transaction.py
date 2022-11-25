@@ -1,16 +1,26 @@
 from flask import (
     Blueprint,
-    current_app,
     jsonify,
 )
 
 from grackle.model import TableTransaction
+from grackle.routes.helpers import (
+    get_db,
+    log_after,
+    log_before,
+)
 
 transaction = Blueprint('transaction', __name__, url_prefix='/transaction')
 
 
-def get_db():
-    return current_app.config['db']
+@transaction.before_request
+def log_before_():
+    log_before()
+
+
+@transaction.after_request
+def log_after_(response):
+    return log_after(response)
 
 
 @transaction.route('/all', methods=['GET'])

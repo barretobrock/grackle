@@ -1,27 +1,7 @@
 {% extends 'base.html' %}
 {% block head %}
     {{ super() }}
-    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/v/bs5/dt-1.13.1/b-2.3.3/b-html5-2.3.3/datatables.min.css"/>
- 
-    <script type="text/javascript" src="https://cdn.datatables.net/v/bs5/dt-1.13.1/b-2.3.3/b-html5-2.3.3/datatables.min.js"></script>
-    <script>
-        {% set col, direction = order_list %}
-        let tbl_id_name = '#{{ tbl_id_name }}';
-        let direction = 'asc'
-        $(document).ready(function () {
-            $(tbl_id_name).DataTable({
-                dom: 'Bfrtip',
-                paging: false,
-                searching: false,
-                order: [[{{ col }}, '{{ direction }}']],
-                buttons: [
-                    'copy',
-                    'csv'
-                ]
-            });
-        });
-    </script>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/table.css') }}">
+    {% include 'components/table.html' %}
 {% endblock %}
 {% block content %}
     <div id="invoice-info">
@@ -45,39 +25,35 @@
         <table class="table table-sm table-bordered table-striped table-dark" id="{{ tbl_id_name }}">
             <thead>
                 <tr>
-                    {% for hdr in header_maps.keys() %}
+                    {% for hdr in headers %}
                         <th>{{ hdr }}</th>
                     {% endfor %}
                 </tr>
             </thead>
             <tbody>
-                {% for entry in entries_list %}
-                <tr>
-                    {%  for k in header_maps.values() %}
-                        <td>
-                            {% if k['path'] %}
-                                <a href="{{ k['path']|format(entry[k['col']]) }}" role="button">{{ entry[k['col']] }}</a>
-                            {% else %}
-                                {{ entry[k['col']] }}
-                            {% endif %}
-                        </td>
-                    {% endfor %}
-                </tr>
+                {% for entry in entries %}
+                    <tr>
+                        <td>{{ entry.transaction_date.strftime('%F') }}</td>
+                        <td>{{ entry.description }}</td>
+                        <td>{{ "{:.2f}".format(entry.quantity) }}</td>
+                        <td>{{ "{:.2f}".format(entry.unit_price) }}</td>
+                        <td>{{ "{:.2f}".format(entry.discount) }}</td>
+                        <td>{{ "{:.2f}".format(entry.total) }}</td>
+                    </tr>
                 {% endfor %}
             </tbody>
             <tfoot>
                 <tr>
-                    {% if entries_list| length > 0 %}
-                        {% for i in range(entries_list[0].keys()| length) %}
-                            {%  if i == entries_list[0].keys()| length - 2 %}
-                                <td>Total: </td>
-                            {%  elif i == entries_list[0].keys()| length - 1 %}
-                                <td>{{ "{:.2f}".format(invoice.total) }}</td>
-                            {% else %}
-                                <td></td>
-                            {% endif %}
-                        {% endfor %}
-                    {% endif %}
+                    {% set n_cols = headers|length %}
+                    {% for i in range(n_cols) %}
+                        {%  if i == n_cols - 2 %}
+                            <td>Total: </td>
+                        {%  elif i == n_cols - 1 %}
+                            <td>{{ "{:.2f}".format(invoice.total) }}</td>
+                        {% else %}
+                            <td></td>
+                        {% endif %}
+                    {% endfor %}
                 </tr>
             </tfoot>
         </table>

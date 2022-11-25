@@ -5,10 +5,7 @@ import re
 from shutil import copyfile
 from typing import Optional
 
-from piecash import (
-    AccountType,
-    open_book,
-)
+from piecash import open_book
 from piecash.business.invoice import (
     Entry,
     Invoice,
@@ -28,6 +25,7 @@ from grackle.config import BaseConfig
 from grackle.core.db import DBAdmin
 from grackle.model import (
     AccountCategory,
+    AccountType,
     Currency,
     ReconciledState,
     TableAccount,
@@ -101,7 +99,7 @@ class GNUCashProcessor:
             if acc.commodity.mnemonic == 'template' or acc.type == 'STOCK':
                 # Bypass stored scheduled transactions and stocks for now
                 continue
-            acc_type = AccountType[acc.type.lower()]
+            acc_type = AccountType[acc.type.upper()]
             acc_cur = Currency[acc.commodity.mnemonic]
 
             match acc.type:
@@ -135,16 +133,7 @@ class GNUCashProcessor:
             # Determine friendly name
             fullname = acc.fullname.replace(':', '.')
             name_splits = fullname.split('.')
-            if len(name_splits) == 1:
-                friendly_name = fullname
-            elif acc_type in (AccountType.expense, AccountType.income):
-                friendly_name = '-'.join(name_splits[1:])
-            elif len(name_splits) > 2:
-                # ALE all have two leading groups that aren't necessarily important
-                #   in differentiating the names in, say, a graph
-                friendly_name = '-'.join(name_splits[2:])
-            else:
-                friendly_name = '-'.join(name_splits)
+            friendly_name = name_splits[-1]
             acc_obj = TableAccount(
                 name=friendly_name,
                 full_name=fullname,
