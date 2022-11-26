@@ -34,6 +34,7 @@ class GrackleQueries:
 
     @classmethod
     def _build_account_filters(cls, acct_name: Union[str, List[str]] = None,
+                               acct_full_name: Union[str, List[str]] = None,
                                acct_category: Union[AccountCategory, List[AccountCategory]] = None,
                                acct_type: Union[AccountType, List[AccountType]] = None) -> List:
         filters = []
@@ -42,6 +43,12 @@ class GrackleQueries:
                 filt = TableAccount.name.in_(acct_name)
             else:
                 filt = TableAccount.name == acct_name
+            filters.append(filt)
+        if acct_full_name is not None:
+            if isinstance(acct_full_name, list):
+                filt = TableAccount.full_name.in_(acct_full_name)
+            else:
+                filt = TableAccount.full_name == acct_full_name
             filters.append(filt)
         if acct_category is not None:
             if isinstance(acct_category, list):
@@ -82,11 +89,13 @@ class GrackleQueries:
 
     @classmethod
     def get_transactions(cls, acct_name: Union[str, List[str]] = None,
+                         acct_full_name: Union[str, List[str]] = None,
                          acct_category: Union[AccountCategory, List[AccountCategory]] = None,
                          acct_type: Union[AccountType, List[AccountType]] = None,
                          start_date: datetime = None, end_date: datetime = None) -> \
             List[TableTransactionSplit]:
-        filters = cls._build_account_filters(acct_name=acct_name, acct_category=acct_category, acct_type=acct_type)
+        filters = cls._build_account_filters(acct_name=acct_name, acct_full_name=acct_full_name,
+                                             acct_category=acct_category, acct_type=acct_type)
 
         if start_date is not None:
             filters.append(
@@ -111,3 +120,7 @@ class GrackleQueries:
                 TableBudget.month == mm,
                 TableBudget.year == yyyy
             )).all()
+
+    @classmethod
+    def get_account_names(cls) -> List[str]:
+        return [x.full_name for x in get_db().session.query(TableAccount.full_name).all()]

@@ -22,6 +22,10 @@ from grackle.model import (
     AccountType,
     TableTransactionSplit,
 )
+from grackle.routes.helpers import (
+    log_after,
+    log_before,
+)
 
 fin = Blueprint('finances', __name__)
 
@@ -40,28 +44,7 @@ def get_periods_transactions(period: str) -> List[TableTransactionSplit]:
     return p_data
 
 
-def page_not_found(e):
-    return render_template('errors/404.html', error_msg=e), 404
-
-
-@fin.route('/select-mvm', methods=['GET', 'POST'])
-def select_mvm():
-    """Page to select months to compare"""
-    if request.method == 'POST':
-        p_list = []
-        for i in range(1, 3):
-            yyyy = request.values.get(f'p{i}-year')
-            mm = request.values.get(f'p{i}-month')
-            p_list.append(f'{int(mm):02d}-{yyyy}')
-        p1, p2 = p_list
-        return redirect(url_for('finances.get_mvm', p1=p1, p2=p2))
-    else:
-        years = [i + 2020 for i in range(datetime.now().year - 2020 + 1)]
-        return render_template('select-mvm.html', years=years, current=datetime.now(),
-                               previous=(datetime.now().replace(day=1) - timedelta(days=1)).replace(day=1))
-
-
-def load_data_into_df(query_result: List[TableTransactionSplit], period_name: str) -> \
+def load_query_data_into_df(query_result: List[TableTransactionSplit], period_name: str) -> \
         Tuple[pd.DataFrame, pd.DataFrame]:
     """
     Extracts the necessary data from the query results, organizes them into a presentation dataframe.
@@ -133,39 +116,84 @@ def load_data_into_df(query_result: List[TableTransactionSplit], period_name: st
     return df, overall_df
 
 
-@fin.route('/mvm/<string:p1>/<string:p2>')
-def get_mvm(p1: str, p2: str):
-    """For rendering a month v month comparison"""
-    # Confirm strings are of MM-YYYY format
-    if any([re.match(r'\d{2}-\d{4}', x) is None for x in [p1, p2]]):
-        return page_not_found(ValueError(f'One or more of the provided values did not match '
-                                         f'the expected syntax: mm-yyyy: "{p1}", "{p2}"'))
-    df = pd.DataFrame()
-    overall_df = pd.DataFrame()
-    for p in [p1, p2]:
-        df, overall_df = load_data_into_df(query_result=get_periods_transactions(period=p), period_name=p)
+def prep_compare_dfs(raw_df: pd.DataFrame, overall_df: pd.DataFrame, reference_col: str = 'budget',
+                     compare_col: str = 'actual') -> \
+        Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
+    """Cleans and organizes the pivoted dataframe, splits into expense income and overall dfs"""
 
-    # Consolidate the dataframe
-    pivoted = df.pivot_table(index=['type', 'category', 'account'], columns=['period'],
-                             values='amt', aggfunc='sum').fillna(0).reset_index()
-    # Remove bank, receivable & credit activity
-    pivoted = pivoted.loc[~pivoted['type'].isin(['BANK', 'EQUITY', 'CREDIT', 'RECEIVABLE']), :]
-    # Income, liability needs to be 'flipped'
-    pivoted.loc[pivoted['type'].isin(['INCOME', 'LIABILITY']), [p1, p2]] = \
-        pivoted.loc[pivoted['type'].isin(['INCOME', 'LIABILITY']), [p1, p2]] * -1
+    pivoted_df = raw_df.pivot_table(index=['type', 'category', 'parent', 'account', 'full_name'],
+                                    columns=['period'], values='amt', aggfunc='sum').fillna(0).reset_index()
+    pivoted_df = pivoted_df.loc[pivoted_df['parent'] != '', :].reset_index(drop=True)
+    pivoted_df['level'] = pivoted_df['full_name'].str.count(r'\.')
+    for i, row in pivoted_df.iterrows():
+        name = row['full_name']
+        for per in [compare_col, reference_col]:
+            row[per] = pivoted_df.loc[pivoted_df['full_name'].str.startswith(name), per].sum()
+        pivoted_df.iloc[i] = row
+    pivoted_df = pivoted_df.sort_values('full_name')
+
     # Add in a delta column
-    pivoted['change'] = pivoted[p1] - pivoted[p2]
-    # Ensure column order (p1 is always the focus, p2 always the comparison)
-    pivoted = pivoted[['type', 'category', 'account', p1, p2, 'change']]
-    expense_df, income_df, overall_df = prep_compare_dfs(pivoted_df=pivoted, reference_col=p1,
-                                                         compare_col=p2)
-    return render_template(
-        'compare.html',
-        title=f'{p1} v. {p2}',
-        income_df=income_df,
-        expense_df=expense_df,
-        overall_df=overall_df
-    )
+    pivoted_df['change'] = pivoted_df[compare_col] - pivoted_df[reference_col]
+
+    # Work on overalls
+    overall_df = overall_df.pivot_table(index=['type'], columns='period', values='amt').reset_index()
+    overall_df['change'] = overall_df[compare_col] - overall_df[reference_col]
+    overall_df['account'] = overall_df['type']
+    overall_df['full_name'] = 'Total'
+    overall_df['level'] = 0
+
+    # Split into separate income / expenses; invert income, as it typically is negative
+    income_df = pivoted_df.loc[pivoted_df['category'] == 'INCOME', ]
+    expense_df = pivoted_df.loc[pivoted_df['category'].isin(['EXPENSE', 'LOAN', 'MORTGAGE']), ]
+
+    # Add in Totals to inc/exp dfs from overall
+    income_df = pd.concat([income_df, overall_df.loc[overall_df['type'] == 'INCOME', :]],
+                          ignore_index=True).fillna('')
+    expense_df = pd.concat([expense_df, overall_df.loc[overall_df['type'] == 'EXPENSE', :]],
+                           ignore_index=True).fillna('')
+
+    # Get total profit / loss for both budgeted & actual
+    overall_df = pd.concat([overall_df, pd.DataFrame({
+        'type': 'P/L',
+        'account': 'P/L',
+        'full_name': 'Total',
+        'level': 0,
+        compare_col: overall_df[compare_col].diff().values[-1],
+        reference_col: overall_df[reference_col].diff().values[-1],
+        'change': overall_df['change'].diff().values[-1],
+    }, index=[0])], ignore_index=True)
+    return expense_df, income_df, overall_df
+
+
+def page_not_found(e):
+    return render_template('errors/404.html', error_msg=e), 404
+
+
+@fin.before_request
+def log_before_():
+    log_before()
+
+
+@fin.after_request
+def log_after_(response):
+    return log_after(response)
+
+
+@fin.route('/select-mvm', methods=['GET', 'POST'])
+def select_mvm():
+    """Page to select months to compare"""
+    if request.method == 'POST':
+        p_list = []
+        for i in range(1, 3):
+            yyyy = request.values.get(f'p{i}-year')
+            mm = request.values.get(f'p{i}-month')
+            p_list.append(f'{int(mm):02d}-{yyyy}')
+        p1, p2 = p_list
+        return redirect(url_for('finances.get_mvm', p1=p1, p2=p2))
+    else:
+        years = [i + 2020 for i in range(datetime.now().year - 2020 + 1)]
+        return render_template('select-mvm.html', years=years, current=datetime.now(),
+                               previous=(datetime.now().replace(day=1) - timedelta(days=1)).replace(day=1))
 
 
 @fin.route('/select-mvb', methods=['GET', 'POST'])
@@ -181,29 +209,32 @@ def select_mvb():
         return render_template('select-mvb.html', years=years, current=datetime.now())
 
 
-def prep_compare_dfs(pivoted_df: pd.DataFrame, overall_df: pd.DataFrame, reference_col: str = 'budget',
-                     compare_col: str = 'actual') -> \
-        Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
-    """Cleans and organizes the pivoted dataframe, splits into expense income and overall dfs"""
-    # Split into separate income / expenses; invert income, as it typically is negative
-    income_df = pivoted_df.loc[pivoted_df['category'] == 'INCOME', ]
-    expense_df = pivoted_df.loc[pivoted_df['category'].isin(['EXPENSE', 'LOAN', 'MORTGAGE']), ]
+@fin.route('/mvm/<string:p1>/<string:p2>')
+def get_mvm(p1: str, p2: str):
+    """For rendering a month v month comparison"""
+    # Confirm strings are of MM-YYYY format
+    if any([re.match(r'\d{2}-\d{4}', x) is None for x in [p1, p2]]):
+        return page_not_found(ValueError(f'One or more of the provided values did not match '
+                                         f'the expected syntax: mm-yyyy: "{p1}", "{p2}"'))
+    df_list = []
+    overall_df_list = []
+    for p in [p1, p2]:
+        df, overall_df = load_query_data_into_df(query_result=get_periods_transactions(period=p), period_name=p)
+        df_list.append(df)
+        overall_df_list.append(overall_df)
 
-    # Add in Totals to inc/exp dfs from overall
-    income_df = pd.concat([income_df, overall_df.loc[overall_df['type'] == 'INCOME', :]], ignore_index=True).fillna('')
-    expense_df = pd.concat([expense_df, overall_df.loc[overall_df['type'] == 'EXPENSE', :]], ignore_index=True).fillna('')
-
-    # Get total profit / loss for both budgeted & actual
-    overall_df = pd.concat([overall_df, pd.DataFrame({
-        'type': 'P/L',
-        'account': 'P/L',
-        'full_name': 'Total',
-        'level': 0,
-        compare_col: overall_df[compare_col].diff().values[-1],
-        reference_col: overall_df[reference_col].diff().values[-1],
-        'change': overall_df['change'].diff().values[-1],
-    }, index=[0])], ignore_index=True)
-    return expense_df, income_df, overall_df
+    df = pd.concat(df_list, ignore_index=True)
+    overall_df = pd.concat(overall_df_list, ignore_index=True)
+    expense_df, income_df, overall_df = prep_compare_dfs(raw_df=df, overall_df=overall_df, reference_col=p1,
+                                                         compare_col=p2)
+    return render_template(
+        'compare.html',
+        title=f'{p1} v. {p2}',
+        headers=['account', p1, p2, 'change'],
+        income_df=income_df,
+        expense_df=expense_df,
+        overall_df=overall_df
+    )
 
 
 @fin.route('/mvb/<string:period>')
@@ -214,38 +245,22 @@ def get_mvb(period: str):
         return page_not_found(ValueError(f'The provided value did not match the '
                                          f'expected syntax: mm-yyyy: "{period}"'))
     p_mm, p_yy = [int(x) for x in period.split('-')]
-    actual_df, overall_actual_df = load_data_into_df(query_result=get_periods_transactions(period=period),
-                                                     period_name='actual')
+    actual_df, overall_actual_df = load_query_data_into_df(
+        query_result=get_periods_transactions(period=period),
+        period_name='actual'
+    )
 
     # Collect the budget for the target period
-    b_data = GrackleQueries.get_budget_data_for_month(mm=p_mm, yyyy=p_yy)
-    budget_df, overall_budget_df = load_data_into_df(query_result=b_data, period_name='budget')
+    budget_df, overall_budget_df = load_query_data_into_df(
+        query_result=GrackleQueries.get_budget_data_for_month(mm=p_mm, yyyy=p_yy),
+        period_name='budget'
+    )
 
     df = pd.concat([actual_df, budget_df], ignore_index=True)
-    pivoted = df.pivot_table(index=['type', 'category', 'parent', 'account', 'full_name'], columns=['period'],
-                             values='amt', aggfunc='sum').fillna(0).reset_index()
-    pivoted = pivoted.loc[pivoted['parent'] != '', :].reset_index(drop=True)
-    pivoted['level'] = pivoted['full_name'].str.count(r'\.')
-    for i, row in pivoted.iterrows():
-        name = row['full_name']
-        for per in ['actual', 'budget']:
-            row[per] = pivoted.loc[pivoted['full_name'].str.startswith(name), per].sum()
-        pivoted.iloc[i] = row
-    pivoted = pivoted.sort_values('full_name')
-
-    # Add in a delta column
-    pivoted['change'] = pivoted['actual'] - pivoted['budget']
-
-    # Work on overalls
     overall_df = pd.concat([overall_actual_df, overall_budget_df], ignore_index=True)
-    overall_df = overall_df.pivot_table(index=['type'], columns='period', values='amt').reset_index()
-    overall_df['change'] = overall_df['actual'] - overall_df['budget']
-    overall_df['account'] = overall_df['type']
-    overall_df['full_name'] = 'Total'
-    overall_df['level'] = 0
 
     expense_df, income_df, overall_df = prep_compare_dfs(
-        pivoted_df=pivoted, overall_df=overall_df, reference_col='budget', compare_col='actual'
+        raw_df=df, overall_df=overall_df, reference_col='budget', compare_col='actual'
     )
 
     return render_template(

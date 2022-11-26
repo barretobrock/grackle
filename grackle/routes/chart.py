@@ -3,6 +3,7 @@ import json
 
 from flask import (
     Blueprint,
+    flash,
     render_template,
 )
 import plotly
@@ -54,9 +55,23 @@ def overview():
 def budget_analysis():
     """Provides analysis of monthly spend per account as box & whisker plot"""
     form = BudgetAnalysisForm()
+    form.accounts.choices = GrackleQueries.get_account_names()
+
     if form.validate_on_submit():
-        transactions = GrackleQueries.get_transactions(start_date=form.start_date.data)
-        df = ChartPrep.get_monthly_activity(transactions=transactions, acct_filter=form.account_regex.data)
+        if form.account_category.data == 'None':
+            form.account_category.data = None
+        if form.account_type.data == 'None':
+            form.account_type.data = None
+        transactions = GrackleQueries.get_transactions(
+            acct_type=form.account_type.data,
+            acct_category=form.account_category.data,
+            acct_full_name=form.accounts.data,
+            start_date=form.start_date.data
+        )
+        if len(transactions) == 0:
+            flash('No transactions found matching that criteria.', 'alert alert-info')
+            return render_template('budget-analysis.html', graphJSON=None, form=form)
+        df = ChartPrep.get_monthly_activity(transactions=transactions)
         fig = go.Figure()
         for acct in df['account'].unique().tolist():
             # Get subset of transactions associated with acount
@@ -68,6 +83,7 @@ def budget_analysis():
                           template='plotly_dark', paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)')
         graphJSON = json.dumps(fig, cls=plotly.utils.PlotlyJSONEncoder)
         return render_template('budget-analysis.html', graphJSON=graphJSON, form=form)
+
     return render_template('budget-analysis.html', graphJSON=None, form=form)
 
 

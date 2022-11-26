@@ -142,7 +142,8 @@ class ChartPrep:
         return fig
 
     @classmethod
-    def get_monthly_activity(cls, transactions: List, acct_filter: str = None) -> pd.DataFrame:
+    def get_monthly_activity(cls, transactions: List[TableTransactionSplit], acct_filter: str = None) -> \
+            pd.DataFrame:
         """Gets all transactions for budget analysis"""
         if acct_filter is None:
             acct_filter = r'.*'
@@ -155,6 +156,7 @@ class ChartPrep:
                 'date': row.transaction.transaction_date,
                 'type': row.account.account_type.name,
                 'account': row.account.name,
+                'full_name': row.account.full_name,
                 'amt': row.amount,
                 'cur': row.account.account_currency.name,
             }, index=[0])], ignore_index=True)
