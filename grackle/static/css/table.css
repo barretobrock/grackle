@@ -11,7 +11,7 @@ div.dt-buttons{
 /* Finance tables */
 .val.zero,
 .diff.zero {
-    color: #acacac;
+    color: rgba(172, 172, 172, 0.30);
 }
 
 table.expense-table td.diff.neg,
@@ -23,6 +23,29 @@ table.expense-table td.diff.pos,
 table.income-table td.diff.pos,
 table.overall-table td.diff.pos {
     color: mediumseagreen;
+}
+
+table.expense-table thead td,
+table.expense-table thead th,
+table.income-table thead td,
+table.income-table thead th,
+table.overall-table thead td,
+table.overall-table thead th,
+table.expense-table.table-bordered,
+table.income-table.table-bordered,
+table.overall-table.table-bordered,
+table.expense-table.table-bordered td,
+table.expense-table.table-bordered th,
+table.income-table.table-bordered td,
+table.income-table.table-bordered th,
+table.overall-table.table-bordered td,
+table.overall-table.table-bordered th {
+    border: 1px dotted rgba(222, 226, 230, 0.71);
+}
+
+
+.table-bordered thead td, .table-bordered thead th {
+    border-bottom-width: 1px;
 }
 
 table th.val-header,
@@ -44,13 +67,17 @@ table tr.total,
 .subcat {
     padding-left: calc(attr(data-level) * 40px) !important;
 }
-.subcat[data-level="1"] {
+tr[data-level="0"] {
+    font-weight: bold;
+    border-top: 1px solid rgba(211, 211, 211, 0.68);
+}
+tr[data-level="1"] .subcat {
      padding-left: calc(1 * 40px) !important;
 }
-.subcat[data-level="2"] {
+tr[data-level="2"] .subcat  {
      padding-left: calc(2 * 40px) !important;
 }
-.subcat[data-level="3"] {
+tr[data-level="3"] .subcat  {
      padding-left: calc(3 * 40px) !important;
 }
 

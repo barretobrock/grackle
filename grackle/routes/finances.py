@@ -18,6 +18,10 @@ from flask import (
 import pandas as pd
 
 from grackle.core.queries import GrackleQueries
+from grackle.forms import (
+    SelectMvB,
+    SelectMvM,
+)
 from grackle.model import (
     AccountType,
     TableTransactionSplit,
@@ -134,6 +138,8 @@ def prep_compare_dfs(raw_df: pd.DataFrame, overall_df: pd.DataFrame, reference_c
 
     # Add in a delta column
     pivoted_df['change'] = pivoted_df[compare_col] - pivoted_df[reference_col]
+    pivoted_df = pivoted_df[['type', 'category', 'parent', 'account', 'full_name', compare_col, reference_col,
+                             'change', 'level']]
 
     # Work on overalls
     overall_df = overall_df.pivot_table(index=['type'], columns='period', values='amt').reset_index()
@@ -182,31 +188,32 @@ def log_after_(response):
 @fin.route('/select-mvm', methods=['GET', 'POST'])
 def select_mvm():
     """Page to select months to compare"""
+    form = SelectMvM()
     if request.method == 'POST':
-        p_list = []
-        for i in range(1, 3):
-            yyyy = request.values.get(f'p{i}-year')
-            mm = request.values.get(f'p{i}-month')
-            p_list.append(f'{int(mm):02d}-{yyyy}')
-        p1, p2 = p_list
+        p1_yyyy = form.focus_yyyy.data
+        p1_mm = int(form.focus_mm.data)
+        p2_yyyy = form.compare_yyyy.data
+        p2_mm = int(form.compare_mm.data)
+        p1 = f'{p1_mm:02d}-{p1_yyyy}'
+        p2 = f'{p2_mm:02d}-{p2_yyyy}'
         return redirect(url_for('finances.get_mvm', p1=p1, p2=p2))
     else:
-        years = [i + 2020 for i in range(datetime.now().year - 2020 + 1)]
-        return render_template('select-mvm.html', years=years, current=datetime.now(),
-                               previous=(datetime.now().replace(day=1) - timedelta(days=1)).replace(day=1))
+        return render_template('select-mvm.html', form=form)
 
 
 @fin.route('/select-mvb', methods=['GET', 'POST'])
 def select_mvb():
     """Page to select month to compare with budget"""
+    form = SelectMvB()
     if request.method == 'POST':
-        yyyy = request.values.get('pd-year')
-        mm = request.values.get('pd-month')
+        yyyy = form.year.data
+        mm = form.month.data
         period = f'{int(mm):02d}-{yyyy}'
         return redirect(url_for('finances.get_mvb', period=period))
     else:
-        years = [i + 2020 for i in range(datetime.now().year - 2020 + 1)]
-        return render_template('select-mvb.html', years=years, current=datetime.now())
+        form.budget_name.choices = GrackleQueries.get_budget_names()
+        form.budget_name.default = GrackleQueries.get_budget_names()[0]
+        return render_template('select-mvb.html', form=form)
 
 
 @fin.route('/mvm/<string:p1>/<string:p2>')
@@ -225,8 +232,8 @@ def get_mvm(p1: str, p2: str):
 
     df = pd.concat(df_list, ignore_index=True)
     overall_df = pd.concat(overall_df_list, ignore_index=True)
-    expense_df, income_df, overall_df = prep_compare_dfs(raw_df=df, overall_df=overall_df, reference_col=p1,
-                                                         compare_col=p2)
+    expense_df, income_df, overall_df = prep_compare_dfs(raw_df=df, overall_df=overall_df, reference_col=p2,
+                                                         compare_col=p1)
     return render_template(
         'compare.html',
         title=f'{p1} v. {p2}',

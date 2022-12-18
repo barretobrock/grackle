@@ -1,4 +1,8 @@
-from flask import Flask
+from flask import (
+    Flask,
+    render_template,
+    request,
+)
 from pukr import (
     InterceptHandler,
     get_logger,
@@ -9,6 +13,7 @@ from grackle.flask_base import db
 from grackle.routes.account import account
 from grackle.routes.chart import chart
 from grackle.routes.finances import fin
+from grackle.routes.helpers import get_app_logger
 from grackle.routes.invoices import invc
 from grackle.routes.main import main
 from grackle.routes.scheduled_transaction import sched_transaction
@@ -23,6 +28,14 @@ ROUTES = [
     sched_transaction,
     transaction
 ]
+
+
+def handle_err(err):
+    _log = get_app_logger()
+    _log.error(err)
+    if err.code == 404:
+        _log.error(f'Path requested: {request.path}')
+    return render_template(f'errors/{err.code}.html'), err.code
 
 
 def create_app(*args, **kwargs) -> Flask:
@@ -44,6 +57,9 @@ def create_app(*args, **kwargs) -> Flask:
     # Register routes
     for rt in ROUTES:
         app.register_blueprint(rt)
+
+    for err in [400, 403, 404, 500]:
+        app.register_error_handler(err, handle_err)
 
     app.config['db'] = db
 
