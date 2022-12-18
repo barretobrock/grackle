@@ -6,7 +6,10 @@ from typing import (
     Union,
 )
 
-from sqlalchemy.sql import and_
+from sqlalchemy.sql import (
+    and_,
+    distinct,
+)
 
 from grackle.model import (
     AccountCategory,
@@ -120,6 +123,10 @@ class GrackleQueries:
                 TableBudget.month == mm,
                 TableBudget.year == yyyy
             )).all()
+
+    @classmethod
+    def get_budget_names(cls) -> List[str]:
+        return [x[0] for x in get_db().session.query(distinct(TableBudget.name)).order_by(TableBudget.name.asc()).all()]
 
     @classmethod
     def get_account_names(cls) -> List[str]:
