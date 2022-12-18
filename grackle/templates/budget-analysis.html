@@ -9,50 +9,21 @@
     <h2>Budget Analysis</h2>
     <form method="POST" action="{{ url_for('chart.budget_analysis') }}">
         {{ form.csrf_token }}
-        <fieldset class="form-field">
-            {{ form.start_date.label }}
-            {{ form.start_date }}
-            {% if form.start_date.errors %}
-                <ul class="errors">
-                    {% for error in form.start_date.errors %}
-                        <li>{{ error }}</li>
-                    {% endfor %}
-                </ul>
-            {% endif %}
-        </fieldset>
-        <fieldset class="form-field">
-            {{ form.account_type.label }}
-            {{ form.account_type }}
-            {% if form.account_type.errors %}
-                <ul class="errors">
-                    {% for error in form.account_type.errors %}
-                        <li>{{ error }}</li>
-                    {% endfor %}
-                </ul>
-            {% endif %}
-        </fieldset>
-        <fieldset class="form-field">
-            {{ form.account_category.label }}
-            {{ form.account_category }}
-            {% if form.account_category.errors %}
-                <ul class="errors">
-                    {% for error in form.account_category.errors %}
-                        <li>{{ error }}</li>
-                    {% endfor %}
-                </ul>
-            {% endif %}
-        </fieldset>
-        <fieldset class="form-field">
-            {{ form.accounts.label }}
-            {{ form.accounts }}
-            {% if form.accounts.errors %}
-                <ul class="errors">
-                    {% for error in form.accounts.errors %}
-                        <li>{{ error }}</li>
-                    {% endfor %}
-                </ul>
-            {% endif %}
-        </fieldset>
+        {% set fields = ['start_date', 'account_type', 'account_category', 'accounts'] %}
+
+        {% for field_name in fields %}
+            <fieldset>
+                {{ form[field_name].label }}
+                {{ form[field_name] }}
+                {% if form[field_name].errors %}
+                    <ul class="errors">
+                        {% for error in form[field_name].errors %}
+                            <li>{{ error }}</li>
+                        {% endfor %}
+                    </ul>
+                {% endif %}
+            </fieldset>
+        {% endfor %}
         {{ form.submit }}
     </form>
     <div id="budget-analysis-chart" class="chart"></div>

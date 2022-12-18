@@ -1,9 +1,0 @@
-{% extends 'base.html' %}
-
-{% block content %}
-    <h2>GNUCash File Upload</h2>
-    <form action="/uploader" method="POST" enctype="multipart/form-data">
-        <input type="file" name="file" accept=".gnucash">
-        <input type="submit" value="Submit">
-    </form>
-{% endblock %}
