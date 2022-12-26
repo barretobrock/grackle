@@ -47,7 +47,7 @@ def handle_err(err):
 @main.route('/')
 @main.route('/home')
 def index():
-    return render_template('index.html')
+    return render_template('index.html', version=current_app.config['VERSION'])
 
 
 @main.route('/refresh', methods=['GET', 'POST'])

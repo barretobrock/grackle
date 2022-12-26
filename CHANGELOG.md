@@ -15,6 +15,10 @@ _Note: 'Unreleased' section below is used for untagged changes that will be issu
 #### Security
 __BEGIN-CHANGELOG__
 
+### [0.2.1] - 2022-12-26
+#### Added
+ - Version at bottom of base template
+
 ### [0.2.0] - 2022-09-04
 #### Added
  - Initialized new iteration
