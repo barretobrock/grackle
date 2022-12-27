@@ -26,5 +26,4 @@ class SelectMvB(FlaskForm):
         label='Budget Name',
         validators=[DataRequired()],
     )
-
     submit = SubmitField('Submit')

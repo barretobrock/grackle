@@ -59,12 +59,13 @@ form.confirm-form {
 
 /*Compare form section*/
 form > div.mvm-section {
-    background-color: antiquewhite;
     padding: 15px;
-    border: 1px dotted #acacac;
 }
 .mvm-submit {
-    float: right;
-    left: 15px;
-    position: relative;
+    padding-top: 5px;
+}
+
+/* Multiselect heightening */
+fieldset #accounts {
+    height: 300px;
 }

@@ -47,7 +47,7 @@ def handle_err(err):
 @main.route('/')
 @main.route('/home')
 def index():
-    return render_template('index.html', version=current_app.config['VERSION'])
+    return render_template('index.html')
 
 
 @main.route('/refresh', methods=['GET', 'POST'])
@@ -69,6 +69,7 @@ def refresh_book():
             flash('Financial data refresh successful.', 'alert alert-success')
         except Exception as e:
             flash(f'Error! - {e}', 'alert alert-danger')
+        current_app.config['GNUCASH_LAST_UPDATE'] = gnc.book_last_updated
         return redirect(url_for('main.index'))
     else:
 

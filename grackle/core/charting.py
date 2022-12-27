@@ -110,14 +110,15 @@ class ChartPrep:
 
         fig = go.Figure()
         for i, col in enumerate(df.columns.tolist()[1:]):
-            if col in historical_cols:
-                # This is past data
-                color = cls.DEFAULT_COLORS[historical_cols.index(col)]
-                line = dict(color=cls.rgb_to_str(color), width=2)
-            else:
-                # Likely future data. Look up the color for the account minus '_future'
-                color = cls.DEFAULT_COLORS[historical_cols.index(col.replace('_future', ''))]
-                line = dict(color=cls.rgb_to_str(color), width=2, dash='dot')
+            col_name_canon = col.replace('_future', '')
+            line = dict(width=2)
+            if i < len(cls.DEFAULT_COLORS):
+                color = cls.DEFAULT_COLORS[historical_cols.index(col_name_canon)]
+                line['color'] = cls.rgb_to_str(color)
+
+            if '_future' in col:
+                line['dash'] = 'dot'
+
             if as_area:
                 fig.add_trace(
                     go.Scatter(x=df['date'], y=df[col], name=col, mode='lines+markers', line=line,

@@ -2,7 +2,7 @@
 
 {% block content %}
    <h2>Select months to compare</h2>
-
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/form.css') }}">
     <form method="POST" action="{{ url_for('finances.select_mvm') }}" >
         {{ form.csrf_token }}
         <div class="row mvm-section">
@@ -26,6 +26,18 @@
                     {{ form.compare_mm(class_="form-control") }}
                 </fieldset>
             </div>
+        </div>
+        <div class="form-field">
+            <fieldset>
+                {{ form.excl_repayments }}
+                {{ form.excl_repayments.label }}
+            </fieldset>
+        </div>
+        <div class="form-field">
+            <fieldset>
+                {{ form.currencies.label }}
+                {{ form.currencies }}
+            </fieldset>
         </div>
         <div class="form-group mvm-submit">
             {{ form.submit(class_="btn btn-primary mvm-submit-btn") }}

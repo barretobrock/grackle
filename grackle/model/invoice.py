@@ -38,7 +38,7 @@ class TableInvoice(Base):
                  notes: str = None):
         self.invoice_no = invoice_no
         self.created_date = created_date
-        self.is_posted = posted_date is not None
+        self.is_posted = posted_date is not None and posted_date.date() > datetime(2000, 1, 1).date()
         self.posted_date = posted_date
         self.is_paid = is_paid
         self.paid_date = pmt_date

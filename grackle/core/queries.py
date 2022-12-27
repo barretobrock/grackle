@@ -9,6 +9,7 @@ from typing import (
 from sqlalchemy.sql import (
     and_,
     distinct,
+    not_,
 )
 
 from grackle.model import (
@@ -39,32 +40,24 @@ class GrackleQueries:
     def _build_account_filters(cls, acct_name: Union[str, List[str]] = None,
                                acct_full_name: Union[str, List[str]] = None,
                                acct_category: Union[AccountCategory, List[AccountCategory]] = None,
-                               acct_type: Union[AccountType, List[AccountType]] = None) -> List:
+                               acct_type: Union[AccountType, List[AccountType]] = None,
+                               acct_currs: Union[str, List[str]] = None) -> List:
+        attrs = {
+            TableAccount.name: acct_name,
+            TableAccount.full_name: acct_full_name,
+            TableAccount.account_category: acct_category,
+            TableAccount.account_type: acct_type,
+            TableAccount.account_currency: acct_currs
+        }
         filters = []
-        if acct_name is not None:
-            if isinstance(acct_name, list):
-                filt = TableAccount.name.in_(acct_name)
-            else:
-                filt = TableAccount.name == acct_name
-            filters.append(filt)
-        if acct_full_name is not None:
-            if isinstance(acct_full_name, list):
-                filt = TableAccount.full_name.in_(acct_full_name)
-            else:
-                filt = TableAccount.full_name == acct_full_name
-            filters.append(filt)
-        if acct_category is not None:
-            if isinstance(acct_category, list):
-                filt = TableAccount.account_category.in_(acct_category)
-            else:
-                filt = TableAccount.account_category == acct_category
-            filters.append(filt)
-        if acct_type is not None:
-            if isinstance(acct_type, list):
-                filt = TableAccount.account_type.in_(acct_type)
-            else:
-                filt = TableAccount.account_type == acct_type
-            filters.append(filt)
+
+        for tbl_attr, attr in attrs.items():
+            if attr is not None:
+                if isinstance(attr, list):
+                    filt = tbl_attr.in_(attr)
+                else:
+                    filt = tbl_attr == attr
+                filters.append(filt)
         return filters
 
     @classmethod
@@ -95,11 +88,16 @@ class GrackleQueries:
                          acct_full_name: Union[str, List[str]] = None,
                          acct_category: Union[AccountCategory, List[AccountCategory]] = None,
                          acct_type: Union[AccountType, List[AccountType]] = None,
-                         start_date: datetime = None, end_date: datetime = None) -> \
+                         start_date: datetime = None, end_date: datetime = None, acct_excl_like: str = None,
+                         acct_currs: List[str] = None) -> \
             List[TableTransactionSplit]:
         filters = cls._build_account_filters(acct_name=acct_name, acct_full_name=acct_full_name,
-                                             acct_category=acct_category, acct_type=acct_type)
-
+                                             acct_category=acct_category, acct_type=acct_type,
+                                             acct_currs=acct_currs)
+        if acct_excl_like is not None:
+            filters.append(
+                not_(TableAccount.full_name.like(acct_excl_like))
+            )
         if start_date is not None:
             filters.append(
                 TableTransaction.transaction_date >= start_date

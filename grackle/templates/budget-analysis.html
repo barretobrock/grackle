@@ -7,6 +7,7 @@
 
 {% block content %}
     <h2>Budget Analysis</h2>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/form.css') }}">
     <form method="POST" action="{{ url_for('chart.budget_analysis') }}">
         {{ form.csrf_token }}
         {% set fields = ['start_date', 'account_type', 'account_category', 'accounts'] %}

@@ -5,6 +5,7 @@ from datetime import (
 
 from flask_wtf import FlaskForm
 from wtforms import (
+    BooleanField,
     SelectField,
     SubmitField,
 )
@@ -38,5 +39,13 @@ class SelectMvM(FlaskForm):
         default=(datetime.today().replace(day=1) - timedelta(days=1)).month,
         choices=range(1, 13)
     )
-
+    excl_repayments = BooleanField(
+        label='Exclude Repayments?',
+        validators=[DataRequired()],
+        default=True
+    )
+    currencies = SelectField(
+        label='Currency',
+        validators=[DataRequired()],
+    )
     submit = SubmitField('Submit')

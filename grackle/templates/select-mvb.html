@@ -2,6 +2,7 @@
 
 {% block content %}
    <h2>Select month to compare with budget</h2>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/form.css') }}">
     <form method="POST" action="{{ url_for('finances.select_mvb') }}">
         {{ form.csrf_token }}
         <div class="row mvb-section">

@@ -24,6 +24,7 @@ from grackle.forms import (
 )
 from grackle.model import (
     AccountType,
+    Currency,
     TableTransactionSplit,
 )
 from grackle.routes.helpers import (
@@ -34,17 +35,21 @@ from grackle.routes.helpers import (
 fin = Blueprint('finances', __name__)
 
 
-def get_periods_transactions(period: str) -> List[TableTransactionSplit]:
+def get_periods_transactions(period: str, is_excl_repays: bool = True, currency: str = None) -> \
+        List[TableTransactionSplit]:
     """Gets the transactions for the given period in MM-YYYY format"""
     allowed_types = [
         AccountType.LIABILITY,
         AccountType.EXPENSE,
         AccountType.INCOME
     ]
+    excl_repays = r'%.MPO.%' if is_excl_repays else None
     p_mm, p_yy = [int(x) for x in period.split('-')]
     p_st = datetime(p_yy, p_mm, 1)
     p_end = (p_st + timedelta(days=33)).replace(day=1) - timedelta(days=1)
-    p_data = GrackleQueries.get_transactions(start_date=p_st, end_date=p_end, acct_type=allowed_types)
+    p_data = GrackleQueries.get_transactions(start_date=p_st, end_date=p_end, acct_type=allowed_types,
+                                             acct_currs=currency,
+                                             acct_excl_like=excl_repays)
     return p_data
 
 
@@ -168,6 +173,9 @@ def prep_compare_dfs(raw_df: pd.DataFrame, overall_df: pd.DataFrame, reference_c
         reference_col: overall_df[reference_col].diff().values[-1],
         'change': overall_df['change'].diff().values[-1],
     }, index=[0])], ignore_index=True)
+
+    # Ensure overall columns are ordered properly
+    overall_df = overall_df[['type', 'account', 'full_name', compare_col, reference_col, 'change', 'level']]
     return expense_df, income_df, overall_df
 
 
@@ -196,8 +204,13 @@ def select_mvm():
         p2_mm = int(form.compare_mm.data)
         p1 = f'{p1_mm:02d}-{p1_yyyy}'
         p2 = f'{p2_mm:02d}-{p2_yyyy}'
-        return redirect(url_for('finances.get_mvm', p1=p1, p2=p2))
+        curr = form.currencies.data
+        is_excl_repays = form.excl_repayments.data
+        return redirect(url_for('finances.get_mvm', p1=p1, p2=p2, currency=curr, is_excl_repays=is_excl_repays))
     else:
+        currs = [x.name for x in list(Currency)]
+        form.currencies.choices = currs
+        form.currencies.default = currs[1]
         return render_template('select-mvm.html', form=form)
 
 
@@ -223,10 +236,13 @@ def get_mvm(p1: str, p2: str):
     if any([re.match(r'\d{2}-\d{4}', x) is None for x in [p1, p2]]):
         return page_not_found(ValueError(f'One or more of the provided values did not match '
                                          f'the expected syntax: mm-yyyy: "{p1}", "{p2}"'))
+    curr = request.args.get('currency', Currency.USD.name)
+    is_excl_repays = request.args.get('is_excl_repays', 'True') == 'True'
     df_list = []
     overall_df_list = []
     for p in [p1, p2]:
-        df, overall_df = load_query_data_into_df(query_result=get_periods_transactions(period=p), period_name=p)
+        transactions = get_periods_transactions(period=p, is_excl_repays=is_excl_repays, currency=curr)
+        df, overall_df = load_query_data_into_df(query_result=transactions, period_name=p)
         df_list.append(df)
         overall_df_list.append(overall_df)
 

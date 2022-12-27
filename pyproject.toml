@@ -4,7 +4,7 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
 name = "grackle"
-version = '0.2.1'
+version = '0.2.2'
 description = "A personal finance webapp built in Flask"
 authors = ["bobrock <bobrock@tuta.io>"]
 license = "MIT"
